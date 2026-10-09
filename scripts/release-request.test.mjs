@@ -637,7 +637,7 @@ test("stable publication signs and Gatekeeper-assesses the outer disk image", as
   );
 });
 
-test("credential-free verification rejects an unsigned stable disk image", async () => {
+test("credential-free verification rejects an unsigned disk image on every channel", async () => {
   const workflow = await readFile(
     new URL("../.github/workflows/release.yml", import.meta.url),
     "utf8",
@@ -658,10 +658,8 @@ test("credential-free verification rejects an unsigned stable disk image", async
     'spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"',
   );
   const accepted = verifyJob.indexOf("grep -F 'source=Notarized Developer ID'", gatekeeper);
-  const stableBranch = verifyJob.indexOf(
-    'if [[ "$RELEASE_CHANNEL" == "stable" ]]; then',
-  );
-  const stableBranchEnd = verifyJob.indexOf("\n          fi", stableBranch);
+  assert.doesNotMatch(verifyJob, /if \[\[ "\$RELEASE_CHANNEL" == "stable" \]\]/);
+
 
   assert.ok(diskImage >= 0, "the downloaded signed payload must select the exact DMG");
   assert.ok(
@@ -669,13 +667,11 @@ test("credential-free verification rejects an unsigned stable disk image", async
     "every channel must reject a structurally invalid downloaded DMG",
   );
   assert.ok(
-    stableBranch > imageIntegrity &&
-      signature > stableBranch &&
+    signature > imageIntegrity &&
       ticket > signature &&
       gatekeeper > ticket &&
-      accepted > gatekeeper &&
-      stableBranchEnd > accepted,
-    "stable updater signing must wait for independent DMG signature, ticket, and Gatekeeper proof",
+      accepted > gatekeeper,
+    "every channel must wait for independent DMG signature, ticket, and Gatekeeper proof",
   );
 });
 

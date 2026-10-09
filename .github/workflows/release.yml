@@ -649,13 +649,13 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$app"
           hdiutil verify "$dmg" >/dev/null
           [[ "$($executable --version)" == "zterm-$RELEASE_VERSION" ]]
-            xcrun stapler validate "$app"
-            spctl --assess --type execute --verbose=4 "$app" 2>&1 \
-              | grep -F 'source=Notarized Developer ID'
-            codesign --verify --strict --verbose=2 "$dmg"
-            xcrun stapler validate "$dmg"
-            spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg" 2>&1 \
-              | grep -F 'source=Notarized Developer ID'
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=4 "$app" 2>&1 \
+            | grep -F 'source=Notarized Developer ID'
+          codesign --verify --strict --verbose=2 "$dmg"
+          xcrun stapler validate "$dmg"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg" 2>&1 \
+            | grep -F 'source=Notarized Developer ID'
 
   sign:
     name: Sign updater payload in an isolated runner
