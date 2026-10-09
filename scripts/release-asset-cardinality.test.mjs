@@ -63,7 +63,8 @@ for (const [name, guard] of guards) {
       });
       if (count === 8) {
         assert.equal(result.status, 0, `${name}: ${result.stdout}${result.stderr}`);
-        assert.match(result.stdout, /accepted/);
+        assert.match(result.stdout, name === "immutable resume"
+          ? /Existing immutable release will be verified from its public bytes/ : /accepted/);
       } else {
         assert.equal(result.status, 1, `${name} accepted ${count} assets: ${result.stdout}`);
         assert.doesNotMatch(result.stdout, /accepted/);
