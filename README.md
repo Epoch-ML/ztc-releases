@@ -1,72 +1,83 @@
-# ZTerm releases
+# ZTC releases
 
-This public repository is the narrow distribution boundary for verified ZTerm
-desktop builds. It contains release requests, immutable GitHub Release assets,
-and the two GitHub Pages update feeds:
+Public distribution policy for the self-contained Apple Silicon ZTC desktop.
+The application is `ztc.app`, displayed as **ZTC**; its signing identifier remains
+`dev.zerg.zterm`. It owns Node 22.23.2 and the exact published `@zergai/ztc` package.
+It shares `~/.ztc` with the npm CLI. It does not require a global Node installation.
 
-- `https://epoch-ml.github.io/zterm-releases/preview/latest.json`
-- `https://epoch-ml.github.io/zterm-releases/stable/latest.json`
+This repository is being bootstrapped. **No verified ZTC release has been
+activated yet.** The existing `Epoch-ML/zterm-releases` repository and its feeds
+remain unchanged. Existing ZTerm installations keep using their existing feed;
+install the new ZTC app beside them to adopt this distribution.
 
-Source remains in `Epoch-ML/zerg`. A protected source tag emits one canonical
-request as a deterministic workflow artifact; the source workflow has no
-credential or write path into this repository. A human adds those unchanged
-bytes in a one-file pull request, merges it into protected `main`, and creates
-the matching protected public tag at the request's unique addition commit.
-The manually dispatched public workflow verifies that complete chain before it
-fetches only the request's exact source commit and matching source tag through a
-read-only deploy key. The Apple Silicon builder runs tests, lint, dependency
-audits, and the desktop smoke test before handing the app to a fresh signer.
-That signer checks out and executes no product source. Stable builds additionally
-require Developer ID signing, notarization, stapling, and Gatekeeper assessment.
+## Release order and trust
 
-The updater archive is SHA-256 checked and signed with independent channel keys:
-[`updater-preview.pubkey`](updater-preview.pubkey) and
-[`updater-stable.pubkey`](updater-stable.pubkey). A fresh Ubuntu
-signer job downloads the unsigned payload, checks out no product source, and
-uses exact locked Tauri and minisign verifier versions before it receives the
-step-scoped key for exactly one channel. Release credentials are split across
-fresh, environment-scoped runners:
+1. Merge and qualify the source in `Epoch-ML/zerg`; publish its npm beta through
+   the existing protected OIDC allocator workflow. Do not bypass the allocator.
+2. Create the matching source `ztc-desktop-preview-v<version>` tag at the exact
+   npm package `zergRelease.sourceCommit`. The source workflow emits a canonical
+   request containing source SHA and the npm registry's exact SHA-512 integrity.
+3. Add only those unchanged request bytes in a reviewed one-file PR here. Merge
+   to protected `main`; create the matching public tag at the request's unique
+   addition commit. Never move or replace a published tag.
+4. Dispatch the release workflow. A read-only source key fetches that exact tag;
+   build/test/audit run without signing credentials. Node is downloaded from
+   nodejs.org at a fixed SHA-256; the npm artifact and source lock must agree.
+5. A fresh Apple signer validates every file before importing credentials. All
+   native binaries are Developer ID signed; only Node receives its JIT entitlement.
+   Both preview and stable apps and DMGs must be notarized, stapled and assessed.
+6. An isolated updater signer signs the archive and public catalog with the
+   selected channel key. The publisher re-downloads all eight immutable assets,
+   rechecks provenance, signatures, hashes, archive bounds and Mach-O architecture.
+7. Generate the exact Homebrew formula from the verified `release.json`, push it
+   to `Epoch-ML/homebrew-tap`, and qualify installation on clean Apple Silicon macOS.
+   Qualify npm/bun with the exact published version and curl from the served script.
+8. **Activate the channel last.** Feed promotion refuses unless the canonical
+   installer at `https://zergai.com/install/ztc.sh` matches this repo byte-for-byte
+   and the tap formula matches the verified catalog. `release.json` appears only
+   with the final monotonic feed update. The website may then expose install methods.
 
-- `zterm-source` contains only the read-only `ZERG_SOURCE_DEPLOY_KEY`;
-- `zterm-apple-preview` contains no secrets and performs ad-hoc signing;
-- `zterm-apple-stable` contains only Developer ID and notarization credentials;
-- `zterm-updater-preview` and `zterm-updater-stable` contain distinct updater
-  private keys for their respective public roots; and
-- `zterm-feed` contains only the write deploy key scoped to `release-data`.
+The first npm release is a beta: use the **preview** desktop channel and
+`curl -fsSL https://zergai.com/install/ztc.sh | sh -s -- --preview`.
+Stable publication refuses any prerelease desktop or npm version.
 
-Stable Apple and updater environments require explicit human approval and do
-not allow administrator bypass. Every release environment is restricted to
-`main`, and this repository has no repository-wide Actions secrets. GitHub
-Release assets are downloaded again over HTTPS and byte-compared before
-`latest.json` is promoted, so a feed can never point at an unverified asset
-from the same run.
+Public channels will be:
 
-## Release policy
+- `https://epoch-ml.github.io/ztc-releases/preview/release.json`
+- `https://epoch-ml.github.io/ztc-releases/stable/release.json`
 
-- Preview request/tag: `zterm-preview-v<strict SemVer>`
-- Stable request/tag: `zterm-v<MAJOR.MINOR.PATCH>`
-- Initial platform: `darwin-aarch64`
-- Bundle identifier: `dev.zerg.zterm`
-- Publication is serialized and never cancels an in-progress release.
-- Existing release tags are immutable and are never overwritten.
-- Main accepts changes only through squash pull requests with linear history.
-- The workflow writes feeds only to `release-data`, never to `main`.
-- A feed version can only advance; same-version retries require identical bytes.
-- The exact Pages deployment is fetched over HTTPS and byte-compared last.
+Each also contains `latest.json` for the native updater. URLs are exact immutable
+GitHub Release paths in this repository; no external artifact hosts are accepted.
 
-The channel-specific Apple and updater environments separate release policy and
-trust roots. Stable fails closed unless every required Apple identity,
-notarization secret, and stable-only updater key is present. A stable client
-also requires the candidate's notarized Developer ID TeamIdentifier to match
-the installed stable app, so a preview/ad-hoc artifact cannot cross channels.
+## Credentials and approvals
 
-ZTC-launched ZTerm 0.1.2 sessions predate the session-preserving update
-handshake. Install the first protocol-bearing release from its signed DMG once;
-automatic signed updates with session restoration resume from that release.
+Empty main-only environments have been created. Apple and both updater signers
+require approval from `idanbeck`, and administrator bypass is disabled. Secret
+values were not copied from the legacy repository and cannot be exported by GitHub.
+No repository-wide secrets are needed or permitted by this split-trust design.
 
-## Local verification
+| Environment | Required secrets |
+| --- | --- |
+| `zterm-source` | `ZERG_SOURCE_DEPLOY_KEY` (read-only deploy key for `Epoch-ML/zerg`) |
+| `zterm-apple-stable` | `ZTERM_APPLE_CERTIFICATE`, `ZTERM_APPLE_CERTIFICATE_PASSWORD`, `ZTERM_APPLE_SIGNING_IDENTITY`, `ZTERM_APPLE_API_ISSUER`, `ZTERM_APPLE_API_KEY_ID`, `ZTERM_APPLE_API_PRIVATE_KEY` |
+| `zterm-updater-preview` | `ZTERM_PREVIEW_UPDATE_SIGNING_PRIVATE_KEY`, `ZTERM_PREVIEW_UPDATE_SIGNING_PRIVATE_KEY_PASSWORD` |
+| `zterm-updater-stable` | `ZTERM_STABLE_UPDATE_SIGNING_PRIVATE_KEY`, `ZTERM_STABLE_UPDATE_SIGNING_PRIVATE_KEY_PASSWORD` |
+| `zterm-feed` | `ZTERM_FEED_DEPLOY_KEY` (write deploy key restricted by branch rules to `release-data`) |
+| `github-pages` | No secrets; Actions OIDC deployment permissions only |
 
-```bash
+The committed channel public keys are unchanged from the legacy distribution.
+Provision matching private keys in these isolated environments, or rotate both
+new public keys and source-embedded keys in a reviewed change before first release.
+Never reuse a channel key as an Apple identity or source key.
+
+Before first dispatch, protect `main` and `ztc-desktop-*` tags, allow only reviewed
+changes, restrict the feed deploy key to `release-data`, and configure GitHub Pages
+for Actions. The `release-data` branch starts empty apart from the landing page;
+there is no placeholder release manifest.
+
+## Local checks
+
+```sh
 npm ci --ignore-scripts
 npm test
 npm run test:mutation
@@ -74,6 +85,6 @@ actionlint .github/workflows/release.yml
 npm audit --audit-level=moderate
 ```
 
-Mutation testing is intentionally scoped to the untrusted request validator.
-The build workflow itself is covered by explicit ordering, provenance, signing,
-audit, shipped-binary smoke, and feed-promotion contract assertions.
+Clean-machine launch, CLI version, desktop login, resume and signed update are
+release gates. A prepared candidate or a green source build alone is not evidence
+that a public download is ready. Never publish synthetic hashes or unsigned assets.

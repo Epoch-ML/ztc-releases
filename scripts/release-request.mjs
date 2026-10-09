@@ -2,6 +2,7 @@
 
 import { lstat, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { validateNpmIdentity } from "./public-release.mjs";
 
 const EXPECTED_FIELDS = [
   "channel",
@@ -13,6 +14,7 @@ const EXPECTED_FIELDS = [
   "source_repository",
   "source_sha",
   "version",
+  "npm",
 ];
 const MAX_REQUEST_BYTES = 16 * 1024;
 const SEMVER_PATTERN =
@@ -34,27 +36,37 @@ function requireString(value, field) {
 }
 
 export function expectedReleaseTag(channel, version) {
-  return channel === "stable" ? `zterm-v${version}` : `zterm-preview-v${version}`;
+  return channel === "stable"
+    ? `ztc-desktop-v${version}`
+    : `ztc-desktop-preview-v${version}`;
 }
 
 export function validateReleaseRequest(request) {
-  if (request === null || typeof request !== "object" || Array.isArray(request)) {
+  if (
+    request === null ||
+    typeof request !== "object" ||
+    Array.isArray(request)
+  ) {
     throw new ReleaseRequestError("release request must be a JSON object");
   }
   const actualFields = Object.keys(request);
-  const missing = EXPECTED_FIELDS.filter((field) => !actualFields.includes(field));
+  const missing = EXPECTED_FIELDS.filter(
+    (field) => !actualFields.includes(field),
+  );
   if (missing.length > 0) {
     throw new ReleaseRequestError(`missing required field: ${missing[0]}`);
   }
-  const unexpected = actualFields.filter((field) => !EXPECTED_FIELDS.includes(field));
+  const unexpected = actualFields.filter(
+    (field) => !EXPECTED_FIELDS.includes(field),
+  );
   if (unexpected.length > 0) {
     throw new ReleaseRequestError(`unexpected field: ${unexpected[0]}`);
   }
   if (request.schema_version !== 1) {
     throw new ReleaseRequestError("schema_version must equal 1");
   }
-  if (request.product !== "ZTerm") {
-    throw new ReleaseRequestError("product must equal ZTerm");
+  if (request.product !== "ZTC") {
+    throw new ReleaseRequestError("product must equal ZTC");
   }
   if (request.source_repository !== "Epoch-ML/zerg") {
     throw new ReleaseRequestError("source_repository must equal Epoch-ML/zerg");
@@ -65,7 +77,9 @@ export function validateReleaseRequest(request) {
 
   const version = requireString(request.version, "version");
   if (!SEMVER_PATTERN.test(version)) {
-    throw new ReleaseRequestError("version must be strict SemVer without a v prefix");
+    throw new ReleaseRequestError(
+      "version must be strict SemVer without a v prefix",
+    );
   }
   if (
     request.channel === "stable" &&
@@ -100,7 +114,7 @@ export function validateReleaseRequest(request) {
   }
   return {
     schema_version: 1,
-    product: "ZTerm",
+    product: "ZTC",
     channel: request.channel,
     version,
     release_tag: expectedTag,
@@ -108,6 +122,7 @@ export function validateReleaseRequest(request) {
     source_sha: sourceSha,
     source_ref: expectedRef,
     requested_at: requestedAt,
+    npm: validateNpmIdentity(request.npm),
   };
 }
 
@@ -119,13 +134,17 @@ export async function readReleaseRequest(path) {
     );
   }
   if (metadata.size > MAX_REQUEST_BYTES) {
-    throw new ReleaseRequestError(`release request exceeds ${MAX_REQUEST_BYTES} bytes`);
+    throw new ReleaseRequestError(
+      `release request exceeds ${MAX_REQUEST_BYTES} bytes`,
+    );
   }
   let parsed;
   try {
     parsed = JSON.parse(await readFile(path, "utf8"));
   } catch (error) {
-    throw new ReleaseRequestError(`release request is not valid JSON: ${error.message}`);
+    throw new ReleaseRequestError(
+      `release request is not valid JSON: ${error.message}`,
+    );
   }
   return validateReleaseRequest(parsed);
 }

@@ -1,4 +1,4 @@
-name: Build and publish ZTerm
+name: Build and publish ZTC
 
 on:
   workflow_dispatch:
@@ -38,6 +38,9 @@ jobs:
       source_ref: ${{ steps.request.outputs.source_ref }}
       source_sha: ${{ steps.request.outputs.source_sha }}
       version: ${{ steps.request.outputs.version }}
+      npm_version: ${{ steps.request.outputs.npm_version }}
+      npm_integrity: ${{ steps.request.outputs.npm_integrity }}
+      npm_tarball: ${{ steps.request.outputs.npm_tarball }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -75,9 +78,9 @@ jobs:
             exit 1
           fi
           if [[ "$INPUT_CHANNEL" == "stable" ]]; then
-            release_tag="zterm-v${INPUT_VERSION}"
+            release_tag="ztc-desktop-v${INPUT_VERSION}"
           elif [[ "$INPUT_CHANNEL" == "preview" ]]; then
-            release_tag="zterm-preview-v${INPUT_VERSION}"
+            release_tag="ztc-desktop-preview-v${INPUT_VERSION}"
           else
             echo "::error::release channel must be preview or stable"
             exit 1
@@ -171,7 +174,12 @@ jobs:
             echo "::error::public release tag must point to the immutable request addition commit"
             exit 1
           fi
-          echo "release_target_sha=$request_commit" >>"$GITHUB_OUTPUT"
+          {
+            echo "release_target_sha=$request_commit"
+            echo "npm_version=$(jq -r .npm.version "$request_path")"
+            echo "npm_integrity=$(jq -r .npm.integrity "$request_path")"
+            echo "npm_tarball=$(jq -r .npm.tarballUrl "$request_path")"
+          } >>"$GITHUB_OUTPUT"
           for field in channel release_tag requested_at source_ref source_sha version; do
             printf '%s=%s\n' "$field" "$(jq -r ".$field" "$request_path")" \
               >>"$GITHUB_OUTPUT"
@@ -194,6 +202,9 @@ jobs:
       ZTERM_SOURCE_SHA: ${{ needs.validate.outputs.source_sha }}
       ZTERM_UPDATE_CHANNEL: ${{ needs.validate.outputs.channel }}
       ZTERM_VERSION: ${{ needs.validate.outputs.version }}
+      ZTC_DESKTOP_NPM_VERSION: ${{ needs.validate.outputs.npm_version }}
+      ZTC_DESKTOP_NPM_INTEGRITY: ${{ needs.validate.outputs.npm_integrity }}
+      ZTC_DESKTOP_NPM_URL: ${{ needs.validate.outputs.npm_tarball }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -276,8 +287,20 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --ignore-scripts --no-audit --no-fund --prefix source/ztc
-          # Colony embeds this ZTC production tree even though ZTerm.app excludes Node.
+          # Colony embeds this ZTC production tree even though ztc.app excludes Node.
           npm audit --omit=dev --audit-level=moderate --prefix source/ztc
+
+      - name: Download pinned bundled Node and exact published agent
+        shell: bash
+        run: |
+          set -euo pipefail
+          node_archive="$RUNNER_TEMP/node-v22.23.2-darwin-arm64.tar.gz"
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 180 --output "$node_archive" https://nodejs.org/dist/v22.23.2/node-v22.23.2-darwin-arm64.tar.gz
+          echo "61130f394c1630d211dd50aecc4353d379480f36d3ac913cd85dbba1aed585c6  $node_archive" | shasum -a 256 -c -
+          tar -xzf "$node_archive" -C "$RUNNER_TEMP"
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 180 --output "$RUNNER_TEMP/ztc-npm.tgz" "$ZTC_DESKTOP_NPM_URL"
+          echo "ZTC_DESKTOP_NODE_ROOT=$RUNNER_TEMP/node-v22.23.2-darwin-arm64" >> "$GITHUB_ENV"
+          echo "ZTC_DESKTOP_NPM_TARBALL=$RUNNER_TEMP/ztc-npm.tgz" >> "$GITHUB_ENV"
 
       - name: Install pinned Rust toolchain
         shell: bash
@@ -304,7 +327,7 @@ jobs:
           set -euo pipefail
           cargo install cargo-audit --version 0.22.2 --locked
 
-      - name: Test, lint, and audit ZTerm
+      - name: Test, lint, and audit ZTC
         working-directory: source/ztc
         shell: bash
         run: |
@@ -352,7 +375,7 @@ jobs:
           [[ "$(file -b "$binary")" == *"arm64"* ]]
           [[ "$($binary --version)" == "zterm-$ZTERM_RELEASE_VERSION" ]]
 
-      - name: Package unsigned ZTerm.app
+      - name: Package unsigned ztc.app
         working-directory: source/ztc
         env:
           ZTERM_BINARY_PATH: packages/zterm/target/aarch64-apple-darwin/release/zterm
@@ -361,7 +384,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/package-zterm-macos.mjs
-          app="$ZTERM_BUNDLE_ROOT/ZTerm.app"
+          app="$ZTERM_BUNDLE_ROOT/ztc.app"
           executable="$app/Contents/MacOS/ZTerm"
           [[ "$($executable --version)" == "zterm-$ZTERM_RELEASE_VERSION" ]]
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' \
@@ -377,14 +400,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ZTERM_SMOKE_BINARY="$ZTERM_BUNDLE_ROOT/ZTerm.app/Contents/MacOS/ZTerm" \
+          ZTERM_SMOKE_BINARY="$ZTERM_BUNDLE_ROOT/ztc.app/Contents/MacOS/ZTerm" \
             node tests/sim/smoke-zterm-desktop.mjs
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        name: Upload unsigned ZTerm application
+        name: Upload unsigned ZTC application
         with:
           name: ${{ needs.validate.outputs.release_tag }}-unsigned-app
-          path: source/ztc/dist/zterm-release-bundle/ZTerm.app
+          path: source/ztc/dist/zterm-release-bundle/ztc.app
           if-no-files-found: error
           retention-days: 14
 
@@ -395,40 +418,33 @@ jobs:
       - build
     runs-on: macos-15
     environment:
-      name: zterm-apple-${{ needs.validate.outputs.channel }}
+      name: zterm-apple-stable
     permissions:
       contents: read
     env:
       RELEASE_CHANNEL: ${{ needs.validate.outputs.channel }}
       RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
       RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+      SOURCE_SHA: ${{ needs.validate.outputs.source_sha }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.23.2"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ needs.validate.outputs.release_tag }}-unsigned-app
-          path: unsigned/ZTerm.app
+          path: unsigned/ztc.app
 
       - name: Validate the non-executable product payload
         shell: bash
         run: |
           set -euo pipefail
-          app="$GITHUB_WORKSPACE/unsigned/ZTerm.app"
-          executable="$app/Contents/MacOS/ZTerm"
+          app="$GITHUB_WORKSPACE/unsigned/ztc.app"
           test -d "$app"
-          test -z "$(find "$GITHUB_WORKSPACE/unsigned" -type l -print -quit)"
-          test "$(find "$GITHUB_WORKSPACE/unsigned" -type f | wc -l | tr -d ' ')" = "3"
-          test -f "$app/Contents/Info.plist"
-          test -f "$app/Contents/PkgInfo"
-          test -f "$executable"
-          unexpected="$({
-            find "$GITHUB_WORKSPACE/unsigned" -type f \
-              ! -path "$app/Contents/Info.plist" \
-              ! -path "$app/Contents/PkgInfo" \
-              ! -path "$executable"
-          } | head -n 1)"
-          test -z "$unexpected"
-          chmod 755 "$executable"
-          file -b "$executable" | grep -F arm64 >/dev/null
+          node scripts/inspect-bundle.mjs "$app" "$RELEASE_VERSION" "$SOURCE_SHA" > "$RUNNER_TEMP/native-payloads.txt"
           expected_bundle_version="${RELEASE_VERSION%%[-+]*}"
           printf '%s\n' "$expected_bundle_version" \
             | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
@@ -442,7 +458,6 @@ jobs:
             "$app/Contents/Info.plist" | grep -Fx "$expected_bundle_version"
 
       - name: Require and import stable Apple identity
-        if: needs.validate.outputs.channel == 'stable'
         env:
           APPLE_API_ISSUER_SECRET: ${{ secrets.ZTERM_APPLE_API_ISSUER }}
           APPLE_API_KEY_ID_SECRET: ${{ secrets.ZTERM_APPLE_API_KEY_ID }}
@@ -500,30 +515,27 @@ jobs:
             echo "APPLE_SIGNING_IDENTITY=$APPLE_SIGNING_IDENTITY_SECRET"
           } >>"$GITHUB_ENV"
 
-      - name: Sign ZTerm without launching its executable
+      - name: Sign ZTC without launching its executable
         shell: bash
         run: |
           set -euo pipefail
-          app="$GITHUB_WORKSPACE/unsigned/ZTerm.app"
-          executable="$app/Contents/MacOS/ZTerm"
-          if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
-            codesign --force --options runtime --timestamp \
-              --sign "$APPLE_SIGNING_IDENTITY" "$executable"
-            codesign --force --options runtime --timestamp \
-              --sign "$APPLE_SIGNING_IDENTITY" "$app"
-          else
-            codesign --force --options runtime --timestamp=none --sign - "$executable"
-            codesign --force --options runtime --timestamp=none --sign - "$app"
-          fi
+          app="$GITHUB_WORKSPACE/unsigned/ztc.app"
+          while IFS= read -r native; do
+            if [[ "$native" == "$app/Contents/Resources/runtime/node" ]]; then
+              codesign --force --options runtime --timestamp --entitlements scripts/node.entitlements.plist --sign "$APPLE_SIGNING_IDENTITY" "$native"
+            else
+              codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$native"
+            fi
+          done < "$RUNNER_TEMP/native-payloads.txt"
+          codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$app"
           codesign --verify --deep --strict --verbose=2 "$app"
 
       - name: Notarize and staple stable application
-        if: needs.validate.outputs.channel == 'stable'
         shell: bash
         run: |
           set -euo pipefail
-          app="$GITHUB_WORKSPACE/unsigned/ZTerm.app"
-          app_zip="$RUNNER_TEMP/ZTerm-notarization.zip"
+          app="$GITHUB_WORKSPACE/unsigned/ztc.app"
+          app_zip="$RUNNER_TEMP/ZTC-notarization.zip"
           result="$RUNNER_TEMP/zterm-app-notarization.json"
           ditto -c -k --keepParent "$app" "$app_zip"
           xcrun notarytool submit "$app_zip" \
@@ -542,28 +554,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$GITHUB_WORKSPACE/unsigned/ZTerm.app"
+          app="$GITHUB_WORKSPACE/unsigned/ztc.app"
           mkdir payload
-          archive="$GITHUB_WORKSPACE/payload/ZTerm.app.tar.gz"
-          dmg="$GITHUB_WORKSPACE/payload/ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+          archive="$GITHUB_WORKSPACE/payload/ztc.app.tar.gz"
+          dmg="$GITHUB_WORKSPACE/payload/ztc_${RELEASE_VERSION}_aarch64.dmg"
           dmg_root="$RUNNER_TEMP/zterm-dmg-root"
           mkdir -p "$dmg_root"
-          COPYFILE_DISABLE=1 tar -C "$GITHUB_WORKSPACE/unsigned" -czf "$archive" ZTerm.app
-          ditto "$app" "$dmg_root/ZTerm.app"
+          COPYFILE_DISABLE=1 tar -C "$GITHUB_WORKSPACE/unsigned" -czf "$archive" ztc.app
+          ditto "$app" "$dmg_root/ztc.app"
           ln -s /Applications "$dmg_root/Applications"
           hdiutil create \
-            -volname "ZTerm" \
+            -volname "ZTC" \
             -srcfolder "$dmg_root" \
             -format UDZO \
             -ov "$dmg"
           hdiutil verify "$dmg" >/dev/null
 
       - name: Notarize and staple stable disk image
-        if: needs.validate.outputs.channel == 'stable'
         shell: bash
         run: |
           set -euo pipefail
-          dmg="$GITHUB_WORKSPACE/payload/ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+          dmg="$GITHUB_WORKSPACE/payload/ztc_${RELEASE_VERSION}_aarch64.dmg"
           result="$RUNNER_TEMP/zterm-dmg-notarization.json"
           codesign --force --timestamp \
             --sign "$APPLE_SIGNING_IDENTITY" "$dmg"
@@ -582,7 +593,7 @@ jobs:
           hdiutil verify "$dmg" >/dev/null
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        name: Upload Apple-signed ZTerm release payload
+        name: Upload Apple-signed ZTC release payload
         with:
           name: ${{ needs.validate.outputs.release_tag }}-apple-signed
           path: payload/
@@ -622,10 +633,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir app-smoke
-          tar -xzf payload/ZTerm.app.tar.gz -C app-smoke
-          app="$GITHUB_WORKSPACE/app-smoke/ZTerm.app"
+          tar -xzf payload/ztc.app.tar.gz -C app-smoke
+          app="$GITHUB_WORKSPACE/app-smoke/ztc.app"
           executable="$app/Contents/MacOS/ZTerm"
-          dmg="$GITHUB_WORKSPACE/payload/ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+          dmg="$GITHUB_WORKSPACE/payload/ztc_${RELEASE_VERSION}_aarch64.dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
           hdiutil verify "$dmg" >/dev/null
           [[ "$($executable --version)" == "zterm-$RELEASE_VERSION" ]]
@@ -700,11 +711,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive_candidates=(unsigned/ZTerm.app.tar.gz)
-          dmg_candidates=(unsigned/ZTerm_*_aarch64.dmg)
+          archive_candidates=(unsigned/ztc.app.tar.gz)
+          dmg_candidates=(unsigned/ztc_*_aarch64.dmg)
           [[ ${#archive_candidates[@]} -eq 1 && -s "${archive_candidates[0]}" ]]
           [[ ${#dmg_candidates[@]} -eq 1 && -s "${dmg_candidates[0]}" ]]
-          [[ "$(basename "${dmg_candidates[0]}")" == "ZTerm_${RELEASE_VERSION}_aarch64.dmg" ]]
+          [[ "$(basename "${dmg_candidates[0]}")" == "ztc_${RELEASE_VERSION}_aarch64.dmg" ]]
 
       - name: Require updater signing credential
         env:
@@ -750,16 +761,16 @@ jobs:
             private_key_password="$PREVIEW_PRIVATE_KEY_PASSWORD"
           fi
           mkdir payload
-          cp unsigned/ZTerm.app.tar.gz payload/ZTerm.app.tar.gz
-          cp "unsigned/ZTerm_${RELEASE_VERSION}_aarch64.dmg" \
-            "payload/ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+          cp unsigned/ztc.app.tar.gz payload/ztc.app.tar.gz
+          cp "unsigned/ztc_${RELEASE_VERSION}_aarch64.dmg" \
+            "payload/ztc_${RELEASE_VERSION}_aarch64.dmg"
           TAURI_PRIVATE_KEY="$private_key" \
           TAURI_PRIVATE_KEY_PASSWORD="$private_key_password" \
             release-index/node_modules/.bin/tauri signer sign \
-              payload/ZTerm.app.tar.gz
-          [[ -s payload/ZTerm.app.tar.gz.sig ]]
-          minisign -Vm payload/ZTerm.app.tar.gz \
-            -x <(openssl base64 -d -A -in payload/ZTerm.app.tar.gz.sig) \
+              payload/ztc.app.tar.gz
+          [[ -s payload/ztc.app.tar.gz.sig ]]
+          minisign -Vm payload/ztc.app.tar.gz \
+            -x <(openssl base64 -d -A -in payload/ztc.app.tar.gz.sig) \
             -p <(openssl base64 -d -A \
               -in "release-index/updater-$RELEASE_CHANNEL.pubkey")
 
@@ -767,9 +778,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive_name="ZTerm.app.tar.gz"
-          signature_name="ZTerm.app.tar.gz.sig"
-          dmg_name="ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+          archive_name="ztc.app.tar.gz"
+          signature_name="ztc.app.tar.gz.sig"
+          dmg_name="ztc_${RELEASE_VERSION}_aarch64.dmg"
           archive_sha="$(sha256sum "payload/$archive_name" | cut -d' ' -f1)"
           signature_sha="$(sha256sum "payload/$signature_name" | cut -d' ' -f1)"
           dmg_sha="$(sha256sum "payload/$dmg_name" | cut -d' ' -f1)"
@@ -779,10 +790,7 @@ jobs:
             node release-index/scripts/release-asset-url.mjs \
               "$GITHUB_REPOSITORY" "$RELEASE_TAG" "$archive_name"
           )"
-          apple_notarized=false
-          if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
-            apple_notarized=true
-          fi
+          apple_notarized=true
 
           printf '%s  %s\n' "$archive_sha" "$archive_name" \
             >payload/checksums.txt
@@ -804,7 +812,7 @@ jobs:
             --argjson apple_notarized "$apple_notarized" \
             '{
               schema_version: 1,
-              product: "ZTerm",
+              product: "ZTC",
               version: $version,
               channel: $channel,
               platform: "darwin-aarch64",
@@ -820,13 +828,13 @@ jobs:
           jq -n \
             --arg archive_sha "$archive_sha" \
             --arg archive_url "$archive_url" \
-            --arg notes "ZTerm $RELEASE_CHANNEL release from source $SOURCE_SHA." \
+            --arg notes "ZTC $RELEASE_CHANNEL release from source $SOURCE_SHA." \
             --arg pub_date "$RELEASE_DATE" \
             --arg signature "$signature" \
             --arg version "$RELEASE_VERSION" \
             '{
               schema_version: 1,
-              product: "ZTerm",
+              product: "ZTC",
               version: $version,
               notes: $notes,
               pub_date: $pub_date,
@@ -839,20 +847,35 @@ jobs:
               }
             }' >payload/latest.json
 
+          tar -xOzf unsigned/ztc.app.tar.gz ztc.app/Contents/Resources/ztc-runtime.json > "$RUNNER_TEMP/ztc-runtime.json"
+          node release-index/scripts/build-public-release.mjs "release-index/requests/$RELEASE_TAG.json" "$RUNNER_TEMP/ztc-runtime.json" payload
           (cd payload && sha256sum -c checksums.txt)
           jq -e \
             --arg channel "$RELEASE_CHANNEL" \
             --arg sha "$SOURCE_SHA" \
             --arg version "$RELEASE_VERSION" \
-            '.product == "ZTerm" and .version == $version and .channel == $channel and .source_sha == $sha and .platform == "darwin-aarch64" and .bundle_identifier == "dev.zerg.zterm"' \
+            '.product == "ZTC" and .version == $version and .channel == $channel and .source_sha == $sha and .platform == "darwin-aarch64" and .bundle_identifier == "dev.zerg.zterm"' \
             payload/release-metadata.json >/dev/null
           jq -e \
             --arg version "$RELEASE_VERSION" \
-            '.schema_version == 1 and .product == "ZTerm" and .version == $version and (.platforms["darwin-aarch64"].signature | length > 0)' \
+            '.schema_version == 1 and .product == "ZTC" and .version == $version and (.platforms["darwin-aarch64"].signature | length > 0)' \
             payload/latest.json >/dev/null
 
+      - name: Sign public release catalog for this channel
+        env:
+          PREVIEW_PRIVATE_KEY: ${{ secrets.ZTERM_PREVIEW_UPDATE_SIGNING_PRIVATE_KEY }}
+          PREVIEW_PRIVATE_KEY_PASSWORD: ${{ secrets.ZTERM_PREVIEW_UPDATE_SIGNING_PRIVATE_KEY_PASSWORD }}
+          STABLE_PRIVATE_KEY: ${{ secrets.ZTERM_STABLE_UPDATE_SIGNING_PRIVATE_KEY }}
+          STABLE_PRIVATE_KEY_PASSWORD: ${{ secrets.ZTERM_STABLE_UPDATE_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_CHANNEL" == stable ]]; then private_key="$STABLE_PRIVATE_KEY"; private_key_password="$STABLE_PRIVATE_KEY_PASSWORD"; else private_key="$PREVIEW_PRIVATE_KEY"; private_key_password="$PREVIEW_PRIVATE_KEY_PASSWORD"; fi
+          TAURI_PRIVATE_KEY="$private_key" TAURI_PRIVATE_KEY_PASSWORD="$private_key_password" release-index/node_modules/.bin/tauri signer sign payload/release.json
+          minisign -Vm payload/release.json -x <(openssl base64 -d -A -in payload/release.json.sig) -p <(openssl base64 -d -A -in "release-index/updater-$RELEASE_CHANNEL.pubkey")
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        name: Upload signed ZTerm release payload
+        name: Upload signed ZTC release payload
         with:
           name: ${{ needs.validate.outputs.release_tag }}
           path: payload/
@@ -909,9 +932,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive_candidates=(payload/ZTerm.app.tar.gz)
-          signature_candidates=(payload/ZTerm.app.tar.gz.sig)
-          dmg_candidates=(payload/ZTerm_*_aarch64.dmg)
+          archive_candidates=(payload/ztc.app.tar.gz)
+          signature_candidates=(payload/ztc.app.tar.gz.sig)
+          dmg_candidates=(payload/ztc_*_aarch64.dmg)
           [[ ${#archive_candidates[@]} -eq 1 && -f "${archive_candidates[0]}" ]]
           [[ ${#signature_candidates[@]} -eq 1 && -f "${signature_candidates[0]}" ]]
           [[ ${#dmg_candidates[@]} -eq 1 && -f "${dmg_candidates[0]}" ]]
@@ -923,11 +946,11 @@ jobs:
             --arg version "${{ needs.validate.outputs.version }}" \
             --arg channel "${{ needs.validate.outputs.channel }}" \
             --arg sha "${{ needs.validate.outputs.source_sha }}" \
-            '.product == "ZTerm" and .version == $version and .channel == $channel and .source_sha == $sha' \
+            '.product == "ZTC" and .version == $version and .channel == $channel and .source_sha == $sha' \
             release-metadata.json >/dev/null
           jq -e \
             --arg version "${{ needs.validate.outputs.version }}" \
-            '.schema_version == 1 and .product == "ZTerm" and .version == $version and (.platforms["darwin-aarch64"].signature | length > 0)' \
+            '.schema_version == 1 and .product == "ZTC" and .version == $version and (.platforms["darwin-aarch64"].signature | length > 0)' \
             latest.json >/dev/null
 
       - name: Create or resume immutable GitHub Release draft
@@ -963,14 +986,14 @@ jobs:
           }
           notes="$RUNNER_TEMP/release-notes.md"
           printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)." \
+            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
             "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
             "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward." \
+            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward." \
             >"$notes"
           options=(
             --repo "$GITHUB_REPOSITORY"
-            --title "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)"
+            --title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)"
             --notes-file "$notes"
           )
           if [[ "$RELEASE_CHANNEL" == "preview" ]]; then
@@ -1067,10 +1090,10 @@ jobs:
           release_json="$RUNNER_TEMP/release.json"
           notes="$RUNNER_TEMP/expected-release-notes.md"
           printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)." \
+            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
             "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
             "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward." \
+            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward." \
             >"$notes"
           fetch_exact_release "$release_json"
           expected_prerelease=false
@@ -1079,7 +1102,7 @@ jobs:
           fi
           jq -e \
             --arg tag "$RELEASE_TAG" \
-            --arg title "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)" \
+            --arg title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)" \
             --rawfile body "$notes" \
             --argjson prerelease "$expected_prerelease" \
             '.tag_name == $tag and
@@ -1090,12 +1113,14 @@ jobs:
             "$release_json" >/dev/null
 
           expected_assets=(
-            ZTerm.app.tar.gz
-            ZTerm.app.tar.gz.sig
-            "ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+            ztc.app.tar.gz
+            ztc.app.tar.gz.sig
+            "ztc_${RELEASE_VERSION}_aarch64.dmg"
             checksums.txt
             latest.json
             release-metadata.json
+            release.json
+            release.json.sig
           )
           local_assets=()
           for asset_name in "${expected_assets[@]}"; do
@@ -1107,7 +1132,7 @@ jobs:
             local_assets+=("$local_path")
           done
           if [[ "$(find payload -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" -ne 6 ]]; then
-            echo "::error::regenerated payload must contain exactly six canonical assets"
+            echo "::error::regenerated payload must contain exactly eight canonical assets"
             exit 1
           fi
 
@@ -1119,7 +1144,7 @@ jobs:
               exit 1
             fi
             if [[ "$(jq '.assets | length' "$release_json")" -ne 6 ]]; then
-              echo "::error::immutable release must contain exactly six canonical assets"
+              echo "::error::immutable release must contain exactly eight canonical assets"
               exit 1
             fi
             for asset_name in "${expected_assets[@]}"; do
@@ -1190,7 +1215,7 @@ jobs:
           fetch_exact_release "$release_json"
           jq -e \
             --arg tag "$RELEASE_TAG" \
-            --arg title "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)" \
+            --arg title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)" \
             --rawfile body "$notes" \
             --argjson prerelease "$expected_prerelease" \
             '.tag_name == $tag and
@@ -1321,10 +1346,10 @@ jobs:
           release_json="$RUNNER_TEMP/verified-release.json"
           notes="$RUNNER_TEMP/expected-release-notes.md"
           printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)." \
+            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
             "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
             "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward." \
+            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward." \
             >"$notes"
           fetch_exact_release "$release_json"
           was_draft="$(jq -r .draft "$release_json")"
@@ -1334,7 +1359,7 @@ jobs:
           fi
           jq -e \
             --arg tag "$RELEASE_TAG" \
-            --arg title "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)" \
+            --arg title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)" \
             --rawfile body "$notes" \
             --argjson prerelease "$expected_prerelease" \
             '.tag_name == $tag and
@@ -1366,7 +1391,7 @@ jobs:
           fetch_exact_release "$release_json"
           jq -e \
             --arg tag "$RELEASE_TAG" \
-            --arg title "ZTerm $RELEASE_VERSION ($RELEASE_CHANNEL)" \
+            --arg title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)" \
             --rawfile body "$notes" \
             --argjson prerelease "$expected_prerelease" \
             '.tag_name == $tag and
@@ -1377,15 +1402,17 @@ jobs:
              .prerelease == $prerelease' \
             "$release_json" >/dev/null
           expected_assets=(
-            ZTerm.app.tar.gz
-            ZTerm.app.tar.gz.sig
-            "ZTerm_${RELEASE_VERSION}_aarch64.dmg"
+            ztc.app.tar.gz
+            ztc.app.tar.gz.sig
+            "ztc_${RELEASE_VERSION}_aarch64.dmg"
             checksums.txt
             latest.json
             release-metadata.json
+            release.json
+            release.json.sig
           )
           if [[ "$(jq '.assets | length' "$release_json")" -ne 6 ]]; then
-            echo "::error::published release must contain exactly six canonical assets"
+            echo "::error::published release must contain exactly eight canonical assets"
             exit 1
           fi
           if [[ -e verified-release ]]; then
@@ -1416,13 +1443,13 @@ jobs:
                  end' "$release_json"
             )"
             case "$asset_name" in
-              ZTerm.app.tar.gz|ZTerm_*_aarch64.dmg)
+              ztc.app.tar.gz|ztc_*_aarch64.dmg)
                 maximum_bytes="$max_binary_bytes"
                 ;;
-              ZTerm.app.tar.gz.sig|checksums.txt)
+              ztc.app.tar.gz.sig|release.json.sig|checksums.txt)
                 maximum_bytes="$max_text_bytes"
                 ;;
-              latest.json|release-metadata.json)
+              latest.json|release-metadata.json|release.json)
                 maximum_bytes="$max_json_bytes"
                 ;;
               *)
@@ -1459,8 +1486,9 @@ jobs:
             "index/requests/${RELEASE_TAG}.json" \
             "$GITHUB_REPOSITORY"
           (cd verified-release && sha256sum -c checksums.txt)
+          minisign -Vm verified-release/release.json -x <(openssl base64 -d -A -in verified-release/release.json.sig) -p <(openssl base64 -d -A -in "index/updater-$RELEASE_CHANNEL.pubkey")
           openssl base64 -d -A \
-            -in verified-release/ZTerm.app.tar.gz.sig \
+            -in verified-release/ztc.app.tar.gz.sig \
             -out "$RUNNER_TEMP/updater.sig"
           tagged_public_key="$RUNNER_TEMP/tagged-updater.pubkey"
           git -C index show \
@@ -1470,36 +1498,36 @@ jobs:
           openssl base64 -d -A \
             -in "$tagged_public_key" \
             -out "$RUNNER_TEMP/updater.pubkey"
-          minisign -Vm verified-release/ZTerm.app.tar.gz \
+          minisign -Vm verified-release/ztc.app.tar.gz \
             -x "$RUNNER_TEMP/updater.sig" \
             -p "$RUNNER_TEMP/updater.pubkey"
 
-          python3 - verified-release/ZTerm.app.tar.gz "$RELEASE_CHANNEL" <<'PY'
+          python3 - verified-release/ztc.app.tar.gz "$RELEASE_CHANNEL" <<'PY'
           import struct
           import sys
           import tarfile
 
           expected = {
-              "ZTerm.app": "directory",
-              "ZTerm.app/Contents": "directory",
-              "ZTerm.app/Contents/_CodeSignature": "directory",
-              "ZTerm.app/Contents/MacOS": "directory",
-              "ZTerm.app/Contents/Info.plist": "file",
-              "ZTerm.app/Contents/PkgInfo": "file",
-              "ZTerm.app/Contents/MacOS/ZTerm": "file",
-              "ZTerm.app/Contents/_CodeSignature/CodeResources": "file",
+              "ztc.app": "directory",
+              "ztc.app/Contents": "directory",
+              "ztc.app/Contents/_CodeSignature": "directory",
+              "ztc.app/Contents/MacOS": "directory",
+              "ztc.app/Contents/Info.plist": "file",
+              "ztc.app/Contents/PkgInfo": "file",
+              "ztc.app/Contents/MacOS/ZTerm": "file",
+              "ztc.app/Contents/_CodeSignature/CodeResources": "file",
           }
           if sys.argv[2] == "stable":
-              expected["ZTerm.app/Contents/CodeResources"] = "file"
+              expected["ztc.app/Contents/CodeResources"] = "file"
           max_member_bytes = 512 * 1024 * 1024
           max_expanded_bytes = 1024 * 1024 * 1024
-          executable_name = "ZTerm.app/Contents/MacOS/ZTerm"
+          executable_name = "ztc.app/Contents/MacOS/ZTerm"
           executable_header = None
           with tarfile.open(sys.argv[1], "r:gz") as archive:
               actual = {}
               expanded_bytes = 0
               for member in archive:
-                  if len(actual) >= len(expected):
+                  if len(actual) >= 32768:
                       raise SystemExit("archive contains too many members")
                   if member.name in actual:
                       raise SystemExit(f"duplicate archive member: {member.name}")
@@ -1524,8 +1552,11 @@ jobs:
                           f"unsafe archive member type: {member.name}"
                       )
                   actual[member.name] = kind
-          if actual != expected:
-              raise SystemExit(f"archive member contract mismatch: {actual!r}")
+          if any(actual.get(name) != kind for name, kind in expected.items()):
+              raise SystemExit("archive is missing a required bundle entry")
+          for name in actual:
+              if name not in expected and not name.startswith("ztc.app/Contents/Resources/") and name != "ztc.app/Contents/Resources":
+                  raise SystemExit(f"unexpected archive member: {name}")
           if len(executable_header or b"") != 8:
               raise SystemExit("archive executable Mach-O header is incomplete")
           magic, cpu_type = struct.unpack("<II", executable_header)
@@ -1539,7 +1570,7 @@ jobs:
           tar \
             --extract \
             --gzip \
-            --file verified-release/ZTerm.app.tar.gz \
+            --file verified-release/ztc.app.tar.gz \
             --directory "$extract_dir" \
             --no-same-owner \
             --no-same-permissions
@@ -1547,13 +1578,11 @@ jobs:
             find "$extract_dir" ! -type d ! -type f -print -quit
           )"
           [[ -z "$unsafe_path" ]]
-          expected_file_count=4
           if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
-            expected_file_count=5
-            [[ -s "$extract_dir/ZTerm.app/Contents/CodeResources" ]]
+            [[ -s "$extract_dir/ztc.app/Contents/CodeResources" ]]
           fi
-          [[ "$(find "$extract_dir" -type f | wc -l | tr -d ' ')" -eq "$expected_file_count" ]]
-          app="$extract_dir/ZTerm.app"
+          node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" > /dev/null
+          app="$extract_dir/ztc.app"
           executable="$app/Contents/MacOS/ZTerm"
           [[ -x "$executable" && -f "$executable" && ! -L "$executable" ]]
           printf 'APPL????' | cmp - "$app/Contents/PkgInfo"
@@ -1566,16 +1595,17 @@ jobs:
           with open(sys.argv[1], "rb") as plist_file:
               info = plistlib.load(plist_file)
           expected = {
-              "CFBundleDisplayName": "ZTerm",
+              "CFBundleDisplayName": "ZTC",
               "CFBundleExecutable": "ZTerm",
               "CFBundleIdentifier": "dev.zerg.zterm",
-              "CFBundleName": "ZTerm",
+              "CFBundleName": "ZTC",
               "CFBundlePackageType": "APPL",
               "CFBundleShortVersionString": sys.argv[2],
               "CFBundleVersion": sys.argv[2],
               "LSMinimumSystemVersion": "12.0",
               "NSHighResolutionCapable": True,
           }
+          expected["CFBundleIconFile"] = "AppIcon"
           if info != expected:
               raise SystemExit(f"Info.plist contract mismatch: {info!r}")
           PY
@@ -1622,10 +1652,23 @@ jobs:
           ref: release-data
           ssh-key: ${{ secrets.ZTERM_FEED_DEPLOY_KEY }}
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.23.2"
+
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: verified-release
           path: payload
+
+      - name: Require installer and Homebrew readiness before activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 30 https://zergai.com/install/ztc.sh -o "$RUNNER_TEMP/install-ztc.sh"
+          cmp "$RUNNER_TEMP/install-ztc.sh" policy/install-ztc.sh
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 30 https://raw.githubusercontent.com/Epoch-ML/homebrew-tap/main/Formula/ztc.rb -o "$RUNNER_TEMP/ztc.rb"
+          node policy/scripts/check-install-readiness.mjs payload/release.json "$RUNNER_TEMP/ztc.rb"
 
       - name: Commit updater manifest after asset verification
         shell: bash
@@ -1639,12 +1682,16 @@ jobs:
             "$latest_path" payload/latest.json \
             "$metadata_path" payload/release-metadata.json
           cp payload/latest.json "$latest_path"
+          cp payload/release.json "data/site/$RELEASE_CHANNEL/release.json"
+          cp payload/release.json.sig "data/site/$RELEASE_CHANNEL/release.json.sig"
           cp payload/release-metadata.json "$metadata_path"
           git -C data config user.name "github-actions[bot]"
           git -C data config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git -C data add \
             "site/$RELEASE_CHANNEL/latest.json" \
+            "site/$RELEASE_CHANNEL/release.json" \
+            "site/$RELEASE_CHANNEL/release.json.sig" \
             "site/$RELEASE_CHANNEL/releases/$RELEASE_VERSION.json"
           if git -C data diff --cached --quiet; then
             echo "The identical updater manifest is already published."
@@ -1750,7 +1797,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pages_root="https://epoch-ml.github.io/zterm-releases"
+          pages_root="https://epoch-ml.github.io/ztc-releases"
           deployed_root="${{ needs.deploy-pages.outputs.page_url }}"
           [[ "$deployed_root" == "$pages_root/" ]]
           cache_key="run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

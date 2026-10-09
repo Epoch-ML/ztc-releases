@@ -11,9 +11,10 @@ import {
   validateReleaseAssetUrl,
 } from "./release-asset-url.mjs";
 import { readReleaseRequest } from "./release-request.mjs";
+import { validateZtcPublicRelease } from "./public-release.mjs";
 
-const RELEASE_REPOSITORY = "Epoch-ML/zterm-releases";
-const ARCHIVE_NAME = "ZTerm.app.tar.gz";
+const RELEASE_REPOSITORY = "Epoch-ML/ztc-releases";
+const ARCHIVE_NAME = "ztc.app.tar.gz";
 const SIGNATURE_NAME = `${ARCHIVE_NAME}.sig`;
 const CHECKSUMS_NAME = "checksums.txt";
 const LATEST_NAME = "latest.json";
@@ -104,10 +105,10 @@ async function sha256File(path) {
 
 function expectedReleaseBody(request) {
   return [
-    `ZTerm ${request.version} (${request.channel}).`,
+    `ZTC ${request.version} (${request.channel}).`,
     `Built from immutable Epoch-ML/zerg source commit \`${request.source_sha}\`.`,
     "The updater archive is signed independently from the macOS application signature.",
-    "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
+    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
   ].join("\n\n");
 }
 
@@ -153,10 +154,14 @@ function validateMetadata(metadata, request, primaryNames, hashes) {
     METADATA_NAME,
   );
   requireEqual(metadata.schema_version, 1, `${METADATA_NAME} schema_version`);
-  requireEqual(metadata.product, "ZTerm", `${METADATA_NAME} product`);
+  requireEqual(metadata.product, "ZTC", `${METADATA_NAME} product`);
   requireEqual(metadata.version, request.version, `${METADATA_NAME} version`);
   requireEqual(metadata.channel, request.channel, `${METADATA_NAME} channel`);
-  requireEqual(metadata.platform, "darwin-aarch64", `${METADATA_NAME} platform`);
+  requireEqual(
+    metadata.platform,
+    "darwin-aarch64",
+    `${METADATA_NAME} platform`,
+  );
   requireEqual(
     metadata.bundle_identifier,
     "dev.zerg.zterm",
@@ -169,7 +174,7 @@ function validateMetadata(metadata, request, primaryNames, hashes) {
   );
   requireEqual(
     metadata.apple_notarized,
-    request.channel === "stable",
+    true,
     `${METADATA_NAME} apple_notarized`,
   );
   if (!Array.isArray(metadata.artifacts) || metadata.artifacts.length !== 3) {
@@ -197,14 +202,18 @@ function validateLatest(latest, request, signature, hashes, repository) {
     LATEST_NAME,
   );
   requireEqual(latest.schema_version, 1, `${LATEST_NAME} schema_version`);
-  requireEqual(latest.product, "ZTerm", `${LATEST_NAME} product`);
+  requireEqual(latest.product, "ZTC", `${LATEST_NAME} product`);
   requireEqual(latest.version, request.version, `${LATEST_NAME} version`);
   requireEqual(
     latest.notes,
-    `ZTerm ${request.channel} release from source ${request.source_sha}.`,
+    `ZTC ${request.channel} release from source ${request.source_sha}.`,
     `${LATEST_NAME} notes`,
   );
-  requireEqual(latest.pub_date, request.requested_at, `${LATEST_NAME} pub_date`);
+  requireEqual(
+    latest.pub_date,
+    request.requested_at,
+    `${LATEST_NAME} pub_date`,
+  );
   const platforms = requireExactKeys(
     latest.platforms,
     ["darwin-aarch64"],
@@ -230,10 +239,14 @@ function validateRelease(release, request, repository, names, sizes, hashes) {
   requireEqual(descriptor.tag_name, request.release_tag, "GitHub release tag");
   requireEqual(
     descriptor.name,
-    `ZTerm ${request.version} (${request.channel})`,
+    `ZTC ${request.version} (${request.channel})`,
     "GitHub release title",
   );
-  requireEqual(descriptor.body, expectedReleaseBody(request), "GitHub release body");
+  requireEqual(
+    descriptor.body,
+    expectedReleaseBody(request),
+    "GitHub release body",
+  );
   requireEqual(descriptor.draft, false, "GitHub release draft state");
   requireEqual(descriptor.immutable, true, "GitHub release immutable state");
   requireEqual(
@@ -241,8 +254,11 @@ function validateRelease(release, request, repository, names, sizes, hashes) {
     request.channel === "preview",
     "GitHub release prerelease state",
   );
-  if (!Array.isArray(descriptor.assets) || descriptor.assets.length !== names.length) {
-    fail("GitHub release must contain exactly the six canonical assets");
+  if (
+    !Array.isArray(descriptor.assets) ||
+    descriptor.assets.length !== names.length
+  ) {
+    fail("GitHub release must contain exactly the eight canonical assets");
   }
 
   const assetsByName = new Map();
@@ -308,13 +324,15 @@ export async function verifyReleasePayload({
   } catch (error) {
     fail(`immutable release request is invalid: ${error.message}`);
   }
-  const dmgName = `ZTerm_${request.version}_aarch64.dmg`;
+  const dmgName = `ztc_${request.version}_aarch64.dmg`;
   const primaryNames = [ARCHIVE_NAME, SIGNATURE_NAME, dmgName];
   const names = [
     ...primaryNames,
     CHECKSUMS_NAME,
     LATEST_NAME,
     METADATA_NAME,
+    "release.json",
+    "release.json.sig",
   ];
 
   let directoryMetadata;
@@ -331,7 +349,9 @@ export async function verifyReleasePayload({
     entries.length !== names.length ||
     entries.some((entry) => !names.includes(entry.name))
   ) {
-    fail(`verified release directory must contain exactly: ${names.join(", ")}`);
+    fail(
+      `verified release directory must contain exactly: ${names.join(", ")}`,
+    );
   }
 
   const sizes = {};
@@ -356,7 +376,9 @@ export async function verifyReleasePayload({
     sizes[name] = metadata.size;
     totalBytes += metadata.size;
     if (totalBytes >= MAX_TOTAL_BYTES) {
-      fail(`canonical asset set reaches its ${MAX_TOTAL_BYTES}-byte total bound`);
+      fail(
+        `canonical asset set reaches its ${MAX_TOTAL_BYTES}-byte total bound`,
+      );
     }
   }
   const hashEntries = await Promise.all(
@@ -386,7 +408,7 @@ export async function verifyReleasePayload({
   validateChecksums(checksumText, primaryNames, hashes);
   const signature = await readBoundedText(
     join(payloadDir, SIGNATURE_NAME),
-    MAX_TEXT_BYTES,
+    8192,
     SIGNATURE_NAME,
   );
   validateCanonicalBase64(signature);
@@ -396,6 +418,24 @@ export async function verifyReleasePayload({
     METADATA_NAME,
   );
   validateMetadata(metadata, request, primaryNames, hashes);
+  const catalog = validateZtcPublicRelease(
+    await readJson(join(payloadDir, "release.json"), 262144, "public release"),
+  );
+  if (
+    catalog.sourceSha !== request.source_sha ||
+    catalog.version !== request.version ||
+    JSON.stringify(catalog.npm) !== JSON.stringify(request.npm) ||
+    catalog.assets.archive.signature !== signature.trim() ||
+    catalog.assets.archive.sha256 !== hashes[ARCHIVE_NAME] ||
+    catalog.assets.dmg.sha256 !== hashes[dmgName]
+  )
+    fail("public release does not match the approved signed artifacts");
+  const catalogSignature = await readBoundedText(
+    join(payloadDir, "release.json.sig"),
+    8192,
+    "public release signature",
+  );
+  validateCanonicalBase64(catalogSignature.trim());
   const latest = await readJson(
     join(payloadDir, LATEST_NAME),
     MAX_JSON_BYTES,

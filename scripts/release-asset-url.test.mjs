@@ -7,11 +7,11 @@ import {
   validateReleaseAssetUrl,
 } from "./release-asset-url.mjs";
 
-const REPOSITORY = "Epoch-ML/zterm-releases";
-const TAG = "zterm-preview-v1.2.3+build.7";
-const ASSET = "ZTerm.app.tar.gz";
+const REPOSITORY = "Epoch-ML/ztc-releases";
+const TAG = "ztc-desktop-preview-v1.2.3+build.7";
+const ASSET = "ztc.app.tar.gz";
 const CANONICAL =
-  "https://github.com/Epoch-ML/zterm-releases/releases/download/zterm-preview-v1.2.3%2Bbuild.7/ZTerm.app.tar.gz";
+  "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v1.2.3%2Bbuild.7/ztc.app.tar.gz";
 
 test("build-metadata tags produce one canonical encoded release asset URL", () => {
   assert.equal(makeReleaseAssetUrl(REPOSITORY, TAG, ASSET), CANONICAL);
@@ -53,10 +53,10 @@ test("release URL validation pins every authority and path component", () => {
 test("release URL generation rejects unsafe repository, tag, and asset segments", () => {
   for (const repository of [
     "one/two/three",
-    "/zterm-releases",
+    "/ztc-releases",
     "Epoch-ML/",
-    "Epoch ML/zterm-releases",
-    "Epoch-ML/zterm-releases@",
+    "Epoch ML/ztc-releases",
+    "Epoch-ML/ztc-releases@",
   ]) {
     assert.throws(
       () => makeReleaseAssetUrl(repository, TAG, ASSET),

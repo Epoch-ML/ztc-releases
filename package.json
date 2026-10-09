@@ -1,5 +1,5 @@
 {
-  "name": "zterm-releases",
+  "name": "ztc-releases",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,6 +13,8 @@
     "@tauri-apps/cli": "2.8.4"
   },
   "overrides": {
-    "qs": "6.15.3"
+    "qs": "6.16.0",
+    "fast-uri": "3.1.8",
+    "brace-expansion": "5.0.12"
   }
 }

@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-const repository = "Epoch-ML/zterm-releases";
-const releaseTag = "zterm-preview-v0.1.2-preview.1";
+const repository = "Epoch-ML/ztc-releases";
+const releaseTag = "ztc-desktop-preview-v0.1.2-preview.1";
 
 async function runReleaseLookup(t, scenario) {
   const workflow = await readFile(
