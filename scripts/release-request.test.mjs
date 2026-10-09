@@ -52,6 +52,7 @@ files = {
         "<IIIIIIII", 0xFEEDFACF, cpu_type, 0, 2, 0, 0, 0, 0
     ),
     "ztc.app/Contents/_CodeSignature/CodeResources": b"fixture signature",
+    "ztc.app/Contents/CodeResources": b"fixture notarization ticket",
 }
 with tarfile.open(archive_path, "w:gz") as archive:
     for name in directories:
@@ -1203,7 +1204,7 @@ test("workflow recovers immutable releases only from canonical public bytes", as
   assert.match(publishJob, /max_expanded_bytes = 1024 \* 1024 \* 1024/);
   assert.match(
     publishJob,
-    /if sys\.argv\[2\] == "stable":[\s\S]*ztc\.app\/Contents\/CodeResources/,
+    /expected\["ztc\.app\/Contents\/CodeResources"\] = "file"/,
   );
   assert.match(
     publishJob,

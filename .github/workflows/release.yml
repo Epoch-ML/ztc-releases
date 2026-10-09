@@ -610,7 +610,7 @@ jobs:
           retention-days: 14
 
       - name: Remove temporary Apple identity
-        if: always() && needs.validate.outputs.channel == 'stable'
+        if: always()
         shell: bash
         run: |
           if [[ -n "${ZTERM_APPLE_KEYCHAIN:-}" ]]; then
@@ -649,7 +649,6 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$app"
           hdiutil verify "$dmg" >/dev/null
           [[ "$($executable --version)" == "zterm-$RELEASE_VERSION" ]]
-          if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
             xcrun stapler validate "$app"
             spctl --assess --type execute --verbose=4 "$app" 2>&1 \
               | grep -F 'source=Notarized Developer ID'
@@ -657,7 +656,6 @@ jobs:
             xcrun stapler validate "$dmg"
             spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg" 2>&1 \
               | grep -F 'source=Notarized Developer ID'
-          fi
 
   sign:
     name: Sign updater payload in an isolated runner
@@ -1495,7 +1493,6 @@ jobs:
             "index/requests/${RELEASE_TAG}.json" \
             "$GITHUB_REPOSITORY"
           (cd verified-release && sha256sum -c checksums.txt)
-          minisign -Vm verified-release/release.json -x <(openssl base64 -d -A -in verified-release/release.json.sig) -p <(openssl base64 -d -A -in "index/updater-$RELEASE_CHANNEL.pubkey")
           openssl base64 -d -A \
             -in verified-release/ztc.app.tar.gz.sig \
             -out "$RUNNER_TEMP/updater.sig"
@@ -1507,6 +1504,7 @@ jobs:
           openssl base64 -d -A \
             -in "$tagged_public_key" \
             -out "$RUNNER_TEMP/updater.pubkey"
+          minisign -Vm verified-release/release.json -x <(openssl base64 -d -A -in verified-release/release.json.sig) -p "$RUNNER_TEMP/updater.pubkey"
           minisign -Vm verified-release/ztc.app.tar.gz \
             -x "$RUNNER_TEMP/updater.sig" \
             -p "$RUNNER_TEMP/updater.pubkey"
@@ -1526,8 +1524,7 @@ jobs:
               "ztc.app/Contents/MacOS/ZTerm": "file",
               "ztc.app/Contents/_CodeSignature/CodeResources": "file",
           }
-          if sys.argv[2] == "stable":
-              expected["ztc.app/Contents/CodeResources"] = "file"
+          expected["ztc.app/Contents/CodeResources"] = "file"
           max_member_bytes = 512 * 1024 * 1024
           max_expanded_bytes = 1024 * 1024 * 1024
           executable_name = "ztc.app/Contents/MacOS/ZTerm"
@@ -1587,9 +1584,7 @@ jobs:
             find "$extract_dir" ! -type d ! -type f -print -quit
           )"
           [[ -z "$unsafe_path" ]]
-          if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
-            [[ -s "$extract_dir/ztc.app/Contents/CodeResources" ]]
-          fi
+          [[ -s "$extract_dir/ztc.app/Contents/CodeResources" ]]
           node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" > /dev/null
           app="$extract_dir/ztc.app"
           executable="$app/Contents/MacOS/ZTerm"
