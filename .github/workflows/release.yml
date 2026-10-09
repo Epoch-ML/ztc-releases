@@ -1138,7 +1138,7 @@ jobs:
             fi
             local_assets+=("$local_path")
           done
-          if [[ "$(find payload -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" -ne 6 ]]; then
+          if [[ "$(find payload -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" -ne "${#expected_assets[@]}" ]]; then
             echo "::error::regenerated payload must contain exactly eight canonical assets"
             exit 1
           fi
@@ -1150,7 +1150,7 @@ jobs:
               echo "::error::an existing published release must be immutable"
               exit 1
             fi
-            if [[ "$(jq '.assets | length' "$release_json")" -ne 6 ]]; then
+            if [[ "$(jq '.assets | length' "$release_json")" -ne "${#expected_assets[@]}" ]]; then
               echo "::error::immutable release must contain exactly eight canonical assets"
               exit 1
             fi
@@ -1225,13 +1225,14 @@ jobs:
             --arg title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)" \
             --rawfile body "$notes" \
             --argjson prerelease "$expected_prerelease" \
+            --argjson asset_count "${#expected_assets[@]}" \
             '.tag_name == $tag and
              .name == $title and
              .body == $body and
              .draft == true and
              (.immutable != true) and
              .prerelease == $prerelease and
-             (.assets | length) == 6' \
+             (.assets | length) == $asset_count' \
             "$release_json" >/dev/null
           for local_path in "${local_assets[@]}"; do
             asset_name="$(basename "$local_path")"
@@ -1418,7 +1419,7 @@ jobs:
             release.json
             release.json.sig
           )
-          if [[ "$(jq '.assets | length' "$release_json")" -ne 6 ]]; then
+          if [[ "$(jq '.assets | length' "$release_json")" -ne "${#expected_assets[@]}" ]]; then
             echo "::error::published release must contain exactly eight canonical assets"
             exit 1
           fi
