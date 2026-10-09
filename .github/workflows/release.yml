@@ -335,7 +335,11 @@ jobs:
           node --import tsx --test \
             tests/unit/zterm_release.test.ts \
             tests/unit/zterm_release_rerun.test.ts \
-            tests/unit/zterm_source_release_workflow.test.ts
+            tests/unit/zterm_source_release_workflow.test.ts \
+            tests/unit/ztc_public_release.test.ts \
+            tests/unit/published_desktop_runtime.test.ts \
+            tests/unit/desktop_public_installer.test.ts \
+            tests/unit/zterm_desktop_runtime_package.test.ts
           cargo test --locked --manifest-path packages/zterm/Cargo.toml
           cargo fmt --manifest-path packages/zterm/Cargo.toml -- --check
           cargo clippy \
@@ -403,11 +407,15 @@ jobs:
           ZTERM_SMOKE_BINARY="$ZTERM_BUNDLE_ROOT/ztc.app/Contents/MacOS/ZTerm" \
             node tests/sim/smoke-zterm-desktop.mjs
 
+      - name: Preserve executable modes for signer transfer
+        shell: bash
+        run: COPYFILE_DISABLE=1 tar -czf source/ztc/dist/zterm-release-bundle/ztc-unsigned.tar.gz -C source/ztc/dist/zterm-release-bundle ztc.app
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         name: Upload unsigned ZTC application
         with:
           name: ${{ needs.validate.outputs.release_tag }}-unsigned-app
-          path: source/ztc/dist/zterm-release-bundle/ztc.app
+          path: source/ztc/dist/zterm-release-bundle/ztc-unsigned.tar.gz
           if-no-files-found: error
           retention-days: 14
 
@@ -436,12 +444,13 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ needs.validate.outputs.release_tag }}-unsigned-app
-          path: unsigned/ztc.app
+          path: unsigned-transfer
 
       - name: Validate the non-executable product payload
         shell: bash
         run: |
           set -euo pipefail
+          python3 scripts/unpack-unsigned.py unsigned-transfer/ztc-unsigned.tar.gz unsigned
           app="$GITHUB_WORKSPACE/unsigned/ztc.app"
           test -d "$app"
           node scripts/inspect-bundle.mjs "$app" "$RELEASE_VERSION" "$SOURCE_SHA" > "$RUNNER_TEMP/native-payloads.txt"

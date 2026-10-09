@@ -698,14 +698,15 @@ test("workflow reconstructs and fail-closed validates the flattened unsigned app
 
   assert.match(
     downloadStep,
-    /path: unsigned\/ztc\.app/,
-    "upload-artifact flattens the app directory, so download must recreate ztc.app",
+    /path: unsigned-transfer/,
+    "transfer the archive so GitHub cannot flatten executable modes",
   );
   assert.doesNotMatch(
     validationStep,
     /^\s*\[\[/m,
     "standalone [[ assertions do not fail a Bash errexit script",
   );
+  assert.match(validationStep, /python3 scripts\/unpack-unsigned\.py unsigned-transfer\/ztc-unsigned\.tar\.gz unsigned/);
   assert.match(validationStep, /node scripts\/inspect-bundle\.mjs/);
   assert.match(validationStep, /"\$RELEASE_VERSION" "\$SOURCE_SHA"/);
   assert.match(validationStep, /Print :CFBundleExecutable/);
