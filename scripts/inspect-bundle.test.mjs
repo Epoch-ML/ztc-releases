@@ -100,3 +100,20 @@ test("bundle inspection refuses an x86 native runtime before signing", async () 
     await rm(f.root, { recursive: true, force: true });
   }
 });
+test("bundle inspection rejects a manifest claiming a different source than the packaged agent", async () => {
+  const f = await fixture();
+  try {
+    const path = join(f.app, "Contents/Resources/ztc-runtime.json");
+    const runtime = JSON.parse(
+      await import("node:fs/promises").then((fs) => fs.readFile(path, "utf8")),
+    );
+    runtime.source_sha = "b".repeat(40);
+    await writeFile(path, JSON.stringify(runtime));
+    await assert.rejects(
+      inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40)),
+      /runtime source\/release identity mismatch/,
+    );
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
