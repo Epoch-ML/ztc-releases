@@ -195,7 +195,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       MACOSX_DEPLOYMENT_TARGET: "12.0"
-      RUST_TOOLCHAIN: "1.88.0"
+      RUST_TOOLCHAIN: "1.94.1"
       ZTERM_BUNDLE_ROOT: ${{ github.workspace }}/source/ztc/dist/zterm-release-bundle
       ZTERM_RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
       ZTERM_RELEASE_VERSION: ${{ needs.validate.outputs.version }}
