@@ -72,8 +72,8 @@ Never reuse a channel key as an Apple identity or source key.
 
 Before first dispatch, protect `main` and `ztc-desktop-*` tags, allow only reviewed
 changes, restrict the feed deploy key to `release-data`, and configure GitHub Pages
-for Actions. The `release-data` branch starts empty apart from the landing page;
-there is no placeholder release manifest.
+for Actions. The `release-data` branch is initialized from the landing page by the first
+verified activation; there is no placeholder release manifest.
 
 ## Local checks
 
@@ -88,3 +88,37 @@ npm audit --audit-level=moderate
 Clean-machine launch, CLI version, desktop login, resume and signed update are
 release gates. A prepared candidate or a green source build alone is not evidence
 that a public download is ready. Never publish synthetic hashes or unsigned assets.
+
+## Activate a verified bridge release
+
+The additive `activate.yml` workflow supports releases signed by the
+[legacy signing bridge](https://github.com/Epoch-ML/zterm-releases/blob/main/.github/workflows/ztc-bridge.yml)
+without copying its secrets. It never builds, signs, creates, uploads, or edits a
+GitHub Release. An authorized operator must first verify the bridge run and
+publish the eight canonical assets as an immutable release here, at the exact
+reviewed request tag. Drafts, mutable releases, wrong provenance, missing assets,
+invalid signatures and changed release tags are rejected.
+
+After the matching installer and Homebrew formula are deployed and clean-machine
+qualification is complete, dispatch activation from this repository's protected
+`main`:
+
+```sh
+gh workflow run activate.yml --repo Epoch-ML/ztc-releases --ref main \
+  -f channel=preview -f version=0.5.0-beta.1 \
+  -f source_sha=639a0d0cc4d6e3eed77db19d937862ab82a36f22
+```
+
+Activation re-downloads all eight immutable assets over HTTPS and applies the
+same request, asset, signature, bounded archive, bundle, installer, Homebrew and
+monotonic feed checks as `release.yml`. Only its feed job has repository write
+permission, through the short-lived `GITHUB_TOKEN`; it has no signing credentials.
+The first successful activation creates `release-data` from the static site only.
+Later activations retain its existing history. An unavailable remote is an error,
+not permission to reset a feed. Pages deploys through Actions OIDC, then compares
+the live updater manifest, version metadata, public catalog and catalog signature
+with the verified bytes.
+
+The existing full release workflow remains available and unchanged. Neither path
+may be dispatched before the npm artifact and reviewed immutable request/tag are
+ready. A prepared workflow does not mean a download is active.
