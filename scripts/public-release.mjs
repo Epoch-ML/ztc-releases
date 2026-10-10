@@ -175,7 +175,7 @@ export function validateZtcPublicRelease(value) {
 }
 export function homebrewFormula(release) {
   const value = validateZtcPublicRelease(release);
-  return `class Ztc < Formula\n  desc "ZTC coding agent with its self-contained desktop runtime"\n  homepage "https://zergai.com/ztc"\n  url "${value.assets.archive.url}"\n  version "${value.npm.version}"\n  sha256 "${value.assets.archive.sha256}"\n  depends_on :macos\n  depends_on arch: :arm64\n\n  def install\n    app = buildpath/"ztc.app"
+  return `class Ztc < Formula\n  desc "Coding agent with its self-contained desktop runtime"\n  homepage "https://zergai.com/ztc"\n  url "${value.assets.archive.url}"\n  version "${value.npm.version}"\n  sha256 "${value.assets.archive.sha256}"\n  depends_on arch: :arm64\n  depends_on :macos\n\n  def install\n    app = buildpath/"ztc.app"
     app = buildpath unless app.directory?
     (libexec/"ztc.app").install app.children\n    (bin/"ztc").write <<~SH\n      #!/bin/sh\n      exec '#{libexec}/ztc.app/Contents/MacOS/ZTerm' --ztc-cli "$@"\n    SH\n  end\n\n  def caveats\n    "Open #{libexec}/ztc.app for the desktop. Existing ~/.ztc profiles are shared."\n  end\n\n  test do\n    assert_match version.to_s, shell_output("#{bin}/ztc --version")\n  end\nend\n`;
 }
