@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { homebrewFormula } from "./public-release.mjs";
@@ -51,4 +55,51 @@ test("formula rejects an archive outside the exact signed release", () => {
     name: "Error",
     message: "ZTC release: artifact URLs must match the exact release",
   });
+});
+
+test("formula installs only signed bundle contents when Homebrew unwraps the archive", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "ztc-formula-staging-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const build = join(directory, "build");
+  const prefix = join(directory, "prefix");
+  await mkdir(join(build, "Contents"), { recursive: true });
+  await writeFile(join(build, "Contents", "Info.plist"), "signed bundle identity");
+  await mkdir(join(build, ".brew_home"));
+  await writeFile(join(build, ".brew_home", "config"), "Homebrew staging state");
+  await mkdir(join(prefix, "libexec"), { recursive: true });
+  await mkdir(join(prefix, "bin"));
+  const path = join(directory, "ztc.rb");
+  await writeFile(path, homebrewFormula(release()));
+  // Homebrew is an external process boundary; its filesystem install primitive
+  // is represented here while the generated Ruby and filesystem remain real.
+  const runner = `
+require "fileutils"
+require "pathname"
+class Formula
+  [:desc, :homepage, :url, :version, :sha256, :depends_on].each do |name|
+    define_singleton_method(name) { |*arguments| }
+  end
+  def self.test(&block); end
+  attr_accessor :buildpath, :libexec, :bin
+end
+class Pathname
+  def install(*sources)
+    FileUtils.mkdir_p(self)
+    sources.flatten.each do |source|
+      FileUtils.cp_r(source, self/source.basename)
+    end
+  end
+end
+load ARGV[0]
+formula = Ztc.new
+formula.buildpath = Pathname.new(ARGV[1])
+formula.libexec = Pathname.new(ARGV[2])/"libexec"
+formula.bin = Pathname.new(ARGV[2])/"bin"
+formula.install
+`;
+  const result = spawnSync("ruby", ["-e", runner, path, build, prefix], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(await readdir(join(prefix, "libexec", "ztc.app")), ["Contents"]);
+  assert.equal(await readFile(join(prefix, "libexec", "ztc.app", "Contents", "Info.plist"), "utf8"), "signed bundle identity");
+  assert.match(await readFile(join(prefix, "bin", "ztc"), "utf8"), /--ztc-cli "\$@"/);
 });
