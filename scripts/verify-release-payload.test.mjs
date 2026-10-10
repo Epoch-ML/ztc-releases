@@ -927,3 +927,30 @@ test("public catalog rejects an artifact from a different distribution", async (
     /artifact URLs must match the exact release/,
   );
 });
+
+
+test("release notice separates updater support from public feed activation", async (t) => {
+  const fixture = await makeFixture(t);
+  await mutateRelease(fixture, (release) => {
+    release.body = [
+      `ZTC ${fixture.request.version} (${fixture.request.channel}).`,
+      `Built from immutable Epoch-ML/zerg source commit \`${fixture.request.source_sha}\`.`,
+      "The updater archive is signed independently from the macOS application signature.",
+      "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
+    ].join("\n\n");
+  });
+  const verified = await verifyReleasePayload({ ...fixture, repository: REPOSITORY });
+  assert.equal(verified.releaseTag, REQUEST.release_tag);
+
+  await mutateRelease(fixture, (release) => {
+    release.body = release.body.replace(
+      "Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
+      "Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
+    );
+  });
+  await assert.rejects(
+    verifyReleasePayload({ ...fixture, repository: REPOSITORY }),
+    (error) => error instanceof ReleasePayloadError &&
+      error.message === "GitHub release body does not match the immutable release request",
+  );
+});
