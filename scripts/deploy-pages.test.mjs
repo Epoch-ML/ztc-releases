@@ -15,7 +15,7 @@ const BUILD_VERSION = "a".repeat(40);
 const DEPLOYMENT_ID = "deployment-123";
 const OIDC_URL = "https://oidc.example.test/token";
 const API_URL = "https://api.github.test";
-const PAGE_URL = "https://epoch-ml.github.io/zterm-releases/";
+const PAGE_URL = "https://epoch-ml.github.io/ztc-releases/";
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -32,7 +32,7 @@ function deploymentOptions(overrides = {}) {
     githubToken: "github-token",
     oidcRequestToken: "oidc-request-token",
     oidcRequestUrl: OIDC_URL,
-    repository: "Epoch-ML/zterm-releases",
+    repository: "Epoch-ML/ztc-releases",
     timeoutMs: String(MAX_DEPLOY_TIMEOUT_MS),
     ...overrides,
   };
@@ -120,7 +120,7 @@ test("queued Pages deployment can succeed after the upstream ten-minute ceiling"
   });
   assert.equal(
     createRequest.url,
-    "https://api.github.test/repos/Epoch-ML/zterm-releases/pages/deployments",
+    "https://api.github.test/repos/Epoch-ML/ztc-releases/pages/deployments",
   );
   assert.deepEqual(createRequest.headers, {
     Accept: "application/vnd.github+json",
@@ -135,7 +135,7 @@ test("queued Pages deployment can succeed after the upstream ten-minute ceiling"
   assert.equal(statusRequests.length, 4);
   assert.equal(
     statusRequests[0].url,
-    `https://api.github.test/repos/Epoch-ML/zterm-releases/pages/deployments/${DEPLOYMENT_ID}`,
+    `https://api.github.test/repos/Epoch-ML/ztc-releases/pages/deployments/${DEPLOYMENT_ID}`,
   );
   assert.equal(statusRequests[0].headers["Content-Type"], undefined);
   assert.equal(
@@ -318,7 +318,7 @@ test("workflow environment writes the exact deployed HTTPS root to its step outp
         ACTIONS_ID_TOKEN_REQUEST_TOKEN: "oidc-request-token",
         ACTIONS_ID_TOKEN_REQUEST_URL: OIDC_URL,
         GITHUB_OUTPUT: outputPath,
-        GITHUB_REPOSITORY: "Epoch-ML/zterm-releases",
+        GITHUB_REPOSITORY: "Epoch-ML/ztc-releases",
         GITHUB_SHA: BUILD_VERSION,
         GITHUB_TOKEN: "github-token",
         PAGES_ARTIFACT_ID: "8968529654",
@@ -331,7 +331,7 @@ test("workflow environment writes the exact deployed HTTPS root to its step outp
     assert.equal(await readFile(outputPath, "utf8"), `page_url=${PAGE_URL}\n`);
     assert.equal(
       fake.requests.find((request) => request.method === "POST").url,
-      "https://api.github.com/repos/Epoch-ML/zterm-releases/pages/deployments",
+      "https://api.github.com/repos/Epoch-ML/ztc-releases/pages/deployments",
     );
   } finally {
     await rm(directory, { force: true, recursive: true });

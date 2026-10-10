@@ -15,7 +15,7 @@ import {
 function manifest(version, sha256 = "a".repeat(64)) {
   return `${JSON.stringify({
     schema_version: 1,
-    product: "ZTerm",
+    product: "ZTC",
     version,
     notes: "fixture",
     pub_date: "2026-08-06T20:00:00.000Z",
@@ -23,7 +23,7 @@ function manifest(version, sha256 = "a".repeat(64)) {
       "darwin-aarch64": {
         sha256,
         signature: "signature",
-        url: "https://github.com/Epoch-ML/zterm-releases/releases/download/tag/ZTerm.app.tar.gz",
+        url: "https://github.com/Epoch-ML/ztc-releases/releases/download/tag/ztc.app.tar.gz",
       },
     },
   }, null, 2)}\n`;
@@ -113,7 +113,7 @@ test("feed promotion rejects rollback and same-precedence byte conflicts", () =>
   );
 });
 
-test("feed promotion rejects malformed JSON and non-ZTerm feed identities", () => {
+test("feed promotion rejects malformed JSON and non-ZTC feed identities", () => {
   assert.throws(
     () => validateFeedPromotion(null, "{not-json}"),
     /candidate manifest is not valid JSON/,
@@ -121,12 +121,12 @@ test("feed promotion rejects malformed JSON and non-ZTerm feed identities", () =
   for (const invalid of [
     null,
     [],
-    { schema_version: 2, product: "ZTerm", version: "1.0.0" },
+    { schema_version: 2, product: "ZTC", version: "1.0.0" },
     { schema_version: 1, product: "Other", version: "1.0.0" },
   ]) {
     assert.throws(
       () => validateFeedPromotion(null, `${JSON.stringify(invalid)}\n`),
-      /candidate manifest is not a ZTerm v1 feed/,
+      /candidate manifest is not a ZTC v1 feed/,
     );
   }
   assert.throws(

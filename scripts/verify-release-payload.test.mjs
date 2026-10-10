@@ -24,18 +24,24 @@ import {
   verifyReleasePayload,
 } from "./verify-release-payload.mjs";
 
-const REPOSITORY = "Epoch-ML/zterm-releases";
+const REPOSITORY = "Epoch-ML/ztc-releases";
 const execFileAsync = promisify(execFile);
 const REQUEST = {
   schema_version: 1,
-  product: "ZTerm",
+  product: "ZTC",
   channel: "preview",
   version: "1.2.3-preview.4",
-  release_tag: "zterm-preview-v1.2.3-preview.4",
+  release_tag: "ztc-desktop-preview-v1.2.3-preview.4",
   source_repository: "Epoch-ML/zerg",
   source_sha: "0123456789abcdef0123456789abcdef01234567",
-  source_ref: "refs/tags/zterm-preview-v1.2.3-preview.4",
+  source_ref: "refs/tags/ztc-desktop-preview-v1.2.3-preview.4",
   requested_at: "2026-08-06T10:04:05.000Z",
+  npm: {
+    name: "@zergai/ztc",
+    version: "0.4.0-beta.2",
+    integrity: "sha512-" + Buffer.alloc(64).toString("base64"),
+    tarballUrl: "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.4.0-beta.2.tgz",
+  },
 };
 
 function sha256(value) {
@@ -48,13 +54,19 @@ async function synchronizeReleaseAsset(fixture, name) {
   const asset = release.assets.find((candidate) => candidate.name === name);
   asset.size = bytes.length;
   asset.digest = `sha256:${sha256(bytes)}`;
-  await writeFile(fixture.releaseJsonPath, `${JSON.stringify(release, null, 2)}\n`);
+  await writeFile(
+    fixture.releaseJsonPath,
+    `${JSON.stringify(release, null, 2)}\n`,
+  );
 }
 
 async function mutateRelease(fixture, mutate) {
   const release = JSON.parse(await readFile(fixture.releaseJsonPath, "utf8"));
   mutate(release);
-  await writeFile(fixture.releaseJsonPath, `${JSON.stringify(release, null, 2)}\n`);
+  await writeFile(
+    fixture.releaseJsonPath,
+    `${JSON.stringify(release, null, 2)}\n`,
+  );
 }
 
 async function mutateJsonAsset(fixture, name, mutate) {
@@ -66,7 +78,7 @@ async function mutateJsonAsset(fixture, name, mutate) {
 }
 
 async function replaceSignature(fixture, signature) {
-  const signatureName = "ZTerm.app.tar.gz.sig";
+  const signatureName = "ztc.app.tar.gz.sig";
   const signaturePath = join(fixture.payloadDir, signatureName);
   await writeFile(signaturePath, signature);
   const signatureHash = sha256(signature);
@@ -75,27 +87,39 @@ async function replaceSignature(fixture, signature) {
   const checksums = await readFile(checksumsPath, "utf8");
   await writeFile(
     checksumsPath,
-    checksums.replace(
-      new RegExp(`^[0-9a-f]{64}  ${signatureName.replaceAll(".", "\\.")}$`, "m"),
-      `${signatureHash}  ${signatureName}`,
-    )
+    checksums
+      .replace(
+        new RegExp(
+          `^[0-9a-f]{64}  ${signatureName.replaceAll(".", "\\.")}$`,
+          "m",
+        ),
+        `${signatureHash}  ${signatureName}`,
+      )
       .trimEnd()
       .split("\n")
       .sort()
       .join("\n") + "\n",
   );
   await mutateJsonAsset(fixture, "release-metadata.json", (metadata) => {
-    metadata.artifacts.find((artifact) => artifact.name === signatureName).sha256 =
-      signatureHash;
+    metadata.artifacts.find(
+      (artifact) => artifact.name === signatureName,
+    ).sha256 = signatureHash;
   });
   await mutateJsonAsset(fixture, "latest.json", (latest) => {
     latest.platforms["darwin-aarch64"].signature = signature;
+  });
+  await mutateJsonAsset(fixture, "release.json", (catalog) => {
+    catalog.assets.archive.signature = signature;
   });
   await synchronizeReleaseAsset(fixture, signatureName);
   await synchronizeReleaseAsset(fixture, "checksums.txt");
 }
 
-async function expectPayloadError(fixture, expectedMessage, repository = REPOSITORY) {
+async function expectPayloadError(
+  fixture,
+  expectedMessage,
+  repository = REPOSITORY,
+) {
   await assert.rejects(
     verifyReleasePayload({ ...fixture, repository }),
     (error) => {
@@ -107,6 +131,15 @@ async function expectPayloadError(fixture, expectedMessage, repository = REPOSIT
 }
 
 async function makeFixture(t, request = REQUEST) {
+  if (request.channel === "stable")
+    request = {
+      ...request,
+      npm: {
+        ...request.npm,
+        version: "0.4.0",
+        tarballUrl: "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.4.0.tgz",
+      },
+    };
   const root = await mkdtemp(join(tmpdir(), "zterm-release-payload-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const payloadDir = join(root, "payload");
@@ -115,16 +148,16 @@ async function makeFixture(t, request = REQUEST) {
   await mkdir(payloadDir);
   await writeFile(requestPath, `${JSON.stringify(request, null, 2)}\n`);
 
-  const archiveName = "ZTerm.app.tar.gz";
-  const signatureName = "ZTerm.app.tar.gz.sig";
-  const dmgName = `ZTerm_${request.version}_aarch64.dmg`;
+  const archiveName = "ztc.app.tar.gz";
+  const signatureName = "ztc.app.tar.gz.sig";
+  const dmgName = `ztc_${request.version}_aarch64.dmg`;
   const signature = Buffer.from(
     "untrusted comment: signature from fixture\nfixture-signature-bytes\n",
   ).toString("base64");
   const primary = {
-    [archiveName]: Buffer.from("signed ZTerm archive fixture"),
+    [archiveName]: Buffer.from("signed ZTC archive fixture"),
     [signatureName]: Buffer.from(signature),
-    [dmgName]: Buffer.from("signed ZTerm disk image fixture"),
+    [dmgName]: Buffer.from("signed ZTC disk image fixture"),
   };
   const primaryHashes = Object.fromEntries(
     Object.entries(primary).map(([name, bytes]) => [name, sha256(bytes)]),
@@ -136,6 +169,7 @@ async function makeFixture(t, request = REQUEST) {
     join(payloadDir, "checksums.txt"),
     [archiveName, signatureName, dmgName]
       .map((name) => `${primaryHashes[name]}  ${name}\n`)
+      .sort()
       .join(""),
   );
   await writeFile(
@@ -143,13 +177,13 @@ async function makeFixture(t, request = REQUEST) {
     `${JSON.stringify(
       {
         schema_version: 1,
-        product: "ZTerm",
+        product: "ZTC",
         version: request.version,
         channel: request.channel,
         platform: "darwin-aarch64",
         bundle_identifier: "dev.zerg.zterm",
         source_sha: request.source_sha,
-        apple_notarized: request.channel === "stable",
+        apple_notarized: true,
         artifacts: [archiveName, signatureName, dmgName].map((name) => ({
           name,
           sha256: primaryHashes[name],
@@ -164,9 +198,9 @@ async function makeFixture(t, request = REQUEST) {
     `${JSON.stringify(
       {
         schema_version: 1,
-        product: "ZTerm",
+        product: "ZTC",
         version: request.version,
-        notes: `ZTerm ${request.channel} release from source ${request.source_sha}.`,
+        notes: `ZTC ${request.channel} release from source ${request.source_sha}.`,
         pub_date: request.requested_at,
         platforms: {
           "darwin-aarch64": {
@@ -185,6 +219,39 @@ async function makeFixture(t, request = REQUEST) {
     )}\n`,
   );
 
+  const catalog = {
+    schemaVersion: 1,
+    product: "ZTC",
+    channel: request.channel,
+    version: request.version,
+    sourceSha: request.source_sha,
+    platform: "darwin-arm64",
+    publishedAt: request.requested_at,
+    npm: request.npm,
+    runtime: { nodeVersion: "22.23.2", manifestSha256: "b".repeat(64) },
+    assets: {
+      archive: {
+        url: makeReleaseAssetUrl(REPOSITORY, request.release_tag, archiveName),
+        sha256: primaryHashes[archiveName],
+        signature,
+      },
+      dmg: {
+        url: makeReleaseAssetUrl(REPOSITORY, request.release_tag, dmgName),
+        sha256: primaryHashes[dmgName],
+      },
+    },
+    bundle: { identifier: "dev.zerg.zterm", appName: "ztc.app" },
+    trust: {
+      updaterKeyId: request.channel,
+      appleTeamId: "JLNC3N65LF",
+      notarized: true,
+    },
+  };
+  await writeFile(join(payloadDir, "release.json"), JSON.stringify(catalog));
+  await writeFile(
+    join(payloadDir, "release.json.sig"),
+    Buffer.from("fixture signature").toString("base64"),
+  );
   const releaseAssets = [];
   let id = 100;
   for (const name of (await readdir(payloadDir)).sort().reverse()) {
@@ -210,12 +277,12 @@ async function makeFixture(t, request = REQUEST) {
       {
         id: 42,
         tag_name: request.release_tag,
-        name: `ZTerm ${request.version} (${request.channel})`,
+        name: `ZTC ${request.version} (${request.channel})`,
         body: [
-          `ZTerm ${request.version} (${request.channel}).`,
+          `ZTC ${request.version} (${request.channel}).`,
           `Built from immutable Epoch-ML/zerg source commit \`${request.source_sha}\`.`,
           "The updater archive is signed independently from the macOS application signature.",
-          "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
+          "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
         ].join("\n\n"),
         draft: false,
         prerelease: request.channel === "preview",
@@ -239,8 +306,8 @@ test("verifies every canonical public release byte against all release contracts
   assert.equal(result.releaseId, 42);
   assert.equal(result.releaseTag, REQUEST.release_tag);
   assert.equal(
-    result.assetSha256["ZTerm.app.tar.gz"],
-    sha256("signed ZTerm archive fixture"),
+    result.assetSha256["ztc.app.tar.gz"],
+    sha256("signed ZTC archive fixture"),
   );
 });
 
@@ -248,12 +315,15 @@ test("requires the signed-DMG bridge notice for pre-protocol desktop sessions", 
   const fixture = await makeFixture(t);
   const release = JSON.parse(await readFile(fixture.releaseJsonPath, "utf8"));
   release.body = [
-    `ZTerm ${fixture.request.version} (${fixture.request.channel}).`,
+    `ZTC ${fixture.request.version} (${fixture.request.channel}).`,
     `Built from immutable Epoch-ML/zerg source commit \`${fixture.request.source_sha}\`.`,
     "The updater archive is signed independently from the macOS application signature.",
-    "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
+    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
   ].join("\n\n");
-  await writeFile(fixture.releaseJsonPath, `${JSON.stringify(release, null, 2)}\n`);
+  await writeFile(
+    fixture.releaseJsonPath,
+    `${JSON.stringify(release, null, 2)}\n`,
+  );
 
   const result = await verifyReleasePayload({
     ...fixture,
@@ -267,8 +337,8 @@ test("verifies the stable release identity and notarization contract", async (t)
     ...REQUEST,
     channel: "stable",
     version: "1.2.3",
-    release_tag: "zterm-v1.2.3",
-    source_ref: "refs/tags/zterm-v1.2.3",
+    release_tag: "ztc-desktop-v1.2.3",
+    source_ref: "refs/tags/ztc-desktop-v1.2.3",
   };
   const fixture = await makeFixture(t, stableRequest);
   const result = await verifyReleasePayload({
@@ -276,8 +346,8 @@ test("verifies the stable release identity and notarization contract", async (t)
     repository: REPOSITORY,
   });
 
-  assert.equal(result.releaseTag, "zterm-v1.2.3");
-  assert.equal(result.assetSha256["ZTerm_1.2.3_aarch64.dmg"].length, 64);
+  assert.equal(result.releaseTag, "ztc-desktop-v1.2.3");
+  assert.equal(result.assetSha256["ztc_1.2.3_aarch64.dmg"].length, 64);
 });
 
 test("verification CLI reports the immutable release identity", async (t) => {
@@ -309,7 +379,7 @@ test("verification CLI reports the immutable release identity", async (t) => {
 test("rejects a plausible but incorrect GitHub API digest", async (t) => {
   const fixture = await makeFixture(t);
   const release = JSON.parse(await readFile(fixture.releaseJsonPath, "utf8"));
-  release.assets.find((asset) => asset.name === "ZTerm.app.tar.gz").digest =
+  release.assets.find((asset) => asset.name === "ztc.app.tar.gz").digest =
     `sha256:${"0".repeat(64)}`;
   await writeFile(fixture.releaseJsonPath, JSON.stringify(release));
 
@@ -317,7 +387,7 @@ test("rejects a plausible but incorrect GitHub API digest", async (t) => {
     verifyReleasePayload({ ...fixture, repository: REPOSITORY }),
     (error) => {
       assert.equal(error.name, ReleasePayloadError.name);
-      assert.match(error.message, /ZTerm\.app\.tar\.gz API digest/);
+      assert.match(error.message, /ztc\.app\.tar\.gz API digest/);
       return true;
     },
   );
@@ -325,7 +395,7 @@ test("rejects a plausible but incorrect GitHub API digest", async (t) => {
 
 test("rejects an oversized immutable archive before hashing or extraction", async (t) => {
   const fixture = await makeFixture(t);
-  const archive = await open(join(fixture.payloadDir, "ZTerm.app.tar.gz"), "r+");
+  const archive = await open(join(fixture.payloadDir, "ztc.app.tar.gz"), "r+");
   await archive.truncate(512 * 1024 * 1024 + 1);
   await archive.close();
 
@@ -333,7 +403,10 @@ test("rejects an oversized immutable archive before hashing or extraction", asyn
     verifyReleasePayload({ ...fixture, repository: REPOSITORY }),
     (error) => {
       assert.equal(error.name, ReleasePayloadError.name);
-      assert.match(error.message, /ZTerm\.app\.tar\.gz exceeds its .* verification bound/);
+      assert.match(
+        error.message,
+        /ztc\.app\.tar\.gz exceeds its .* verification bound/,
+      );
       return true;
     },
   );
@@ -347,7 +420,10 @@ test("enforces exact directory, file, and aggregate byte bounds", async (t) => {
   }
   {
     const fixture = await makeFixture(t);
-    await writeFile(join(fixture.payloadDir, `ZTerm_${REQUEST.version}_aarch64.dmg`), "");
+    await writeFile(
+      join(fixture.payloadDir, `ztc_${REQUEST.version}_aarch64.dmg`),
+      "",
+    );
     await expectPayloadError(fixture, /must not be empty/);
   }
   {
@@ -379,28 +455,34 @@ test("enforces exact directory, file, and aggregate byte bounds", async (t) => {
     const fixture = await makeFixture(t);
     await rm(join(fixture.payloadDir, "latest.json"));
     await mkdir(join(fixture.payloadDir, "latest.json"));
-    await expectPayloadError(fixture, /latest\.json must be a regular non-symlink file/);
+    await expectPayloadError(
+      fixture,
+      /latest\.json must be a regular non-symlink file/,
+    );
   }
   {
     const fixture = await makeFixture(t);
     for (const name of [
-      "ZTerm.app.tar.gz",
-      `ZTerm_${REQUEST.version}_aarch64.dmg`,
+      "ztc.app.tar.gz",
+      `ztc_${REQUEST.version}_aarch64.dmg`,
     ]) {
       const handle = await open(join(fixture.payloadDir, name), "r+");
       await handle.truncate(512 * 1024 * 1024);
       await handle.close();
     }
-    await expectPayloadError(fixture, /canonical asset set reaches its .* total bound/);
+    await expectPayloadError(
+      fixture,
+      /canonical asset set reaches its .* total bound/,
+    );
   }
 });
 
 test("rejects a canonical asset set at the exact aggregate boundary", async (t) => {
   const fixture = await makeFixture(t);
-  const archiveName = "ZTerm.app.tar.gz";
-  const dmgName = `ZTerm_${REQUEST.version}_aarch64.dmg`;
+  const archiveName = "ztc.app.tar.gz";
+  const dmgName = `ztc_${REQUEST.version}_aarch64.dmg`;
   const boundedNames = [
-    "ZTerm.app.tar.gz.sig",
+    "ztc.app.tar.gz.sig",
     "checksums.txt",
     "latest.json",
     "release-metadata.json",
@@ -420,12 +502,15 @@ test("rejects a canonical asset set at the exact aggregate boundary", async (t) 
     await handle.close();
   }
 
-  await expectPayloadError(fixture, /canonical asset set reaches its .* total bound/);
+  await expectPayloadError(
+    fixture,
+    /canonical asset set reaches its .* total bound/,
+  );
 });
 
 test("accepts a canonical signature at the exact text-size boundary", async (t) => {
   const fixture = await makeFixture(t);
-  const boundarySignature = "A".repeat(64 * 1024);
+  const boundarySignature = "A".repeat(8192);
   await replaceSignature(fixture, boundarySignature);
 
   const result = await verifyReleasePayload({
@@ -433,17 +518,17 @@ test("accepts a canonical signature at the exact text-size boundary", async (t) 
     repository: REPOSITORY,
   });
   assert.equal(
-    result.assetSha256["ZTerm.app.tar.gz.sig"],
+    result.assetSha256["ztc.app.tar.gz.sig"],
     sha256(boundarySignature),
   );
 });
 
 test("rejects a canonical signature above the text-size boundary", async (t) => {
   const fixture = await makeFixture(t);
-  await replaceSignature(fixture, "A".repeat(64 * 1024 + 4));
+  await replaceSignature(fixture, "A".repeat(8196));
   await expectPayloadError(
     fixture,
-    /ZTerm\.app\.tar\.gz\.sig exceeds its .* verification bound/,
+    /ztc\.app\.tar\.gz\.sig (?:exceeds its .* verification bound|must contain 1-8192 bytes)/,
   );
 });
 
@@ -489,7 +574,10 @@ test("rejects noncanonical signature and checksum encodings", async (t) => {
     const checksums = await readFile(checksumsPath, "utf8");
     await writeFile(checksumsPath, checksums.slice(0, -1));
     await synchronizeReleaseAsset(fixture, "checksums.txt");
-    await expectPayloadError(fixture, /must end with exactly one complete checksum line/);
+    await expectPayloadError(
+      fixture,
+      /must end with exactly one complete checksum line/,
+    );
   }
   {
     const fixture = await makeFixture(t);
@@ -514,9 +602,12 @@ test("accepts only the workflow's canonical codepoint checksum order", async (t)
     await writeFile(checksumsPath, `${sortedChecksums}\n`);
     await synchronizeReleaseAsset(fixture, "checksums.txt");
 
-    const result = await verifyReleasePayload({ ...fixture, repository: REPOSITORY });
+    const result = await verifyReleasePayload({
+      ...fixture,
+      repository: REPOSITORY,
+    });
     assert.equal(result.releaseId, 42);
-    assert.equal(result.assetSha256["ZTerm.app.tar.gz.sig"], sha256("AAAA"));
+    assert.equal(result.assetSha256["ztc.app.tar.gz.sig"], sha256("AAAA"));
   }
   {
     const fixture = await makeFixture(t);
@@ -537,14 +628,20 @@ test("rejects drift in release metadata and updater manifests", async (t) => {
     await mutateJsonAsset(fixture, "release-metadata.json", (metadata) => {
       metadata.unexpected = true;
     });
-    await expectPayloadError(fixture, /release-metadata\.json must contain exactly/);
+    await expectPayloadError(
+      fixture,
+      /release-metadata\.json must contain exactly/,
+    );
   }
   {
     const fixture = await makeFixture(t);
     await mutateJsonAsset(fixture, "release-metadata.json", (metadata) => {
       delete metadata.version;
     });
-    await expectPayloadError(fixture, /release-metadata\.json must contain exactly/);
+    await expectPayloadError(
+      fixture,
+      /release-metadata\.json must contain exactly/,
+    );
   }
   {
     const fixture = await makeFixture(t);
@@ -552,7 +649,10 @@ test("rejects drift in release metadata and updater manifests", async (t) => {
       delete metadata.version;
       metadata.zzzz = REQUEST.version;
     });
-    await expectPayloadError(fixture, /release-metadata\.json must contain exactly/);
+    await expectPayloadError(
+      fixture,
+      /release-metadata\.json must contain exactly/,
+    );
   }
   {
     const fixture = await makeFixture(t);
@@ -566,7 +666,7 @@ test("rejects drift in release metadata and updater manifests", async (t) => {
     await mutateJsonAsset(fixture, "release-metadata.json", (metadata) => {
       metadata.artifacts[0].sha256 = "f".repeat(64);
     });
-    await expectPayloadError(fixture, /ZTerm\.app\.tar\.gz sha256/);
+    await expectPayloadError(fixture, /ztc\.app\.tar\.gz sha256/);
   }
   {
     const fixture = await makeFixture(t);
@@ -579,7 +679,7 @@ test("rejects drift in release metadata and updater manifests", async (t) => {
     const fixture = await makeFixture(t);
     await mutateJsonAsset(fixture, "latest.json", (latest) => {
       latest.platforms["darwin-aarch64"].url =
-        "https://github.com/Epoch-ML/zterm-releases/releases/download/wrong/ZTerm.app.tar.gz";
+        "https://github.com/Epoch-ML/ztc-releases/releases/download/wrong/ztc.app.tar.gz";
     });
     await expectPayloadError(fixture, /latest\.json archive URL/);
   }
@@ -589,13 +689,22 @@ test("rejects malformed release and asset descriptor identities", async (t) => {
   const cases = [
     [(release) => (release.id = 0), /GitHub release ID/],
     [(release) => (release.draft = true), /GitHub release draft state/],
-    [(release) => (release.prerelease = false), /GitHub release prerelease state/],
-    [(release) => (release.assets = null), /exactly the six canonical assets/],
+    [
+      (release) => (release.prerelease = false),
+      /GitHub release prerelease state/,
+    ],
+    [
+      (release) => (release.assets = null),
+      /exactly the eight canonical assets/,
+    ],
     [
       (release) => release.assets.push({ ...release.assets[0], id: 999 }),
-      /exactly the six canonical assets/,
+      /exactly the eight canonical assets/,
     ],
-    [(release) => (release.assets[0] = null), /GitHub release asset must be a JSON object/],
+    [
+      (release) => (release.assets[0] = null),
+      /GitHub release asset must be a JSON object/,
+    ],
     [(release) => (release.assets[0].name = 7), /contains unexpected asset/],
     [
       (release) => (release.assets[0].name = "unexpected.bin"),
@@ -620,19 +729,29 @@ test("rejects malformed release and asset descriptor identities", async (t) => {
   }
 
   const fixture = await makeFixture(t);
-  await expectPayloadError(fixture, /release repository must equal/, "attacker/repo");
+  await expectPayloadError(
+    fixture,
+    /release repository must equal/,
+    "attacker/repo",
+  );
 });
 
 test("rejects unreadable, nonregular, empty, and malformed release descriptors", async (t) => {
   {
     const fixture = await makeFixture(t);
     await writeFile(fixture.releaseJsonPath, "null");
-    await expectPayloadError(fixture, /GitHub release descriptor must be a JSON object/);
+    await expectPayloadError(
+      fixture,
+      /GitHub release descriptor must be a JSON object/,
+    );
   }
   {
     const fixture = await makeFixture(t);
     await writeFile(fixture.releaseJsonPath, "[]");
-    await expectPayloadError(fixture, /GitHub release descriptor must be a JSON object/);
+    await expectPayloadError(
+      fixture,
+      /GitHub release descriptor must be a JSON object/,
+    );
   }
   {
     const fixture = await makeFixture(t);
@@ -694,7 +813,10 @@ test("rejects a canonical asset replaced by a symbolic link", async (t) => {
     verifyReleasePayload({ ...fixture, repository: REPOSITORY }),
     (error) => {
       assert.equal(error.name, ReleasePayloadError.name);
-      assert.match(error.message, /latest\.json must be a regular non-symlink file/);
+      assert.match(
+        error.message,
+        /latest\.json must be a regular non-symlink file/,
+      );
       return true;
     },
   );
@@ -704,7 +826,10 @@ test("rejects checksums that do not bind the downloaded archive", async (t) => {
   const fixture = await makeFixture(t);
   const checksumsPath = join(fixture.payloadDir, "checksums.txt");
   const checksums = await readFile(checksumsPath, "utf8");
-  await writeFile(checksumsPath, checksums.replace(/^[0-9a-f]{64}/, "f".repeat(64)));
+  await writeFile(
+    checksumsPath,
+    checksums.replace(/^[0-9a-f]{64}/, "f".repeat(64)),
+  );
   await synchronizeReleaseAsset(fixture, "checksums.txt");
 
   await assert.rejects(
@@ -721,7 +846,7 @@ test("rejects release metadata that weakens the preview notarization claim", asy
   const fixture = await makeFixture(t);
   const metadataPath = join(fixture.payloadDir, "release-metadata.json");
   const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
-  metadata.apple_notarized = true;
+  metadata.apple_notarized = false;
   await writeFile(metadataPath, JSON.stringify(metadata));
   await synchronizeReleaseAsset(fixture, "release-metadata.json");
 
@@ -754,16 +879,51 @@ test("rejects a mutable release even when every asset hash matches", async (t) =
 test("rejects a release asset URL outside the exact repository and tag", async (t) => {
   const fixture = await makeFixture(t);
   const release = JSON.parse(await readFile(fixture.releaseJsonPath, "utf8"));
-  release.assets.find((asset) => asset.name === "latest.json").browser_download_url =
-    "https://github.com/attacker/zterm-releases/releases/download/wrong/latest.json";
+  release.assets.find(
+    (asset) => asset.name === "latest.json",
+  ).browser_download_url =
+    "https://github.com/attacker/ztc-releases/releases/download/wrong/latest.json";
   await writeFile(fixture.releaseJsonPath, JSON.stringify(release));
 
   await assert.rejects(
     verifyReleasePayload({ ...fixture, repository: REPOSITORY }),
     (error) => {
       assert.equal(error.name, ReleasePayloadError.name);
-      assert.match(error.message, /latest\.json browser download URL is invalid/);
+      assert.match(
+        error.message,
+        /latest\.json browser download URL is invalid/,
+      );
       return true;
     },
+  );
+});
+
+test("public catalog remains bound to the approved source and archive signature", async (t) => {
+  for (const field of ["source", "signature"]) {
+    const fixture = await makeFixture(t);
+    await mutateJsonAsset(fixture, "release.json", (catalog) => {
+      if (field === "source") catalog.sourceSha = "b".repeat(40);
+      else
+        catalog.assets.archive.signature =
+          Buffer.from("other signature").toString("base64");
+    });
+    await expectPayloadError(
+      fixture,
+      /public release does not match the approved signed artifacts/,
+    );
+  }
+});
+
+test("public catalog rejects an artifact from a different distribution", async (t) => {
+  const fixture = await makeFixture(t);
+  await mutateJsonAsset(fixture, "release.json", (catalog) => {
+    catalog.assets.dmg.url = catalog.assets.dmg.url.replace(
+      "ztc-releases",
+      "zterm-releases",
+    );
+  });
+  await assert.rejects(
+    verifyReleasePayload({ ...fixture, repository: REPOSITORY }),
+    /artifact URLs must match the exact release/,
   );
 });

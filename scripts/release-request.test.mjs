@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile);
 
 function extractCanonicalArchiveVerifier(workflow) {
   const invocation =
-    '          python3 - verified-release/ZTerm.app.tar.gz "$RELEASE_CHANNEL" <<\'PY\'\n';
+    '          python3 - verified-release/ztc.app.tar.gz "$RELEASE_CHANNEL" <<\'PY\'\n';
   const start = workflow.indexOf(invocation);
   assert.ok(start >= 0, "canonical archive verifier must be present");
   const bodyStart = start + invocation.length;
@@ -40,18 +40,19 @@ import tarfile
 archive_path = sys.argv[1]
 cpu_type = int(sys.argv[2], 0)
 directories = [
-    "ZTerm.app",
-    "ZTerm.app/Contents",
-    "ZTerm.app/Contents/_CodeSignature",
-    "ZTerm.app/Contents/MacOS",
+    "ztc.app",
+    "ztc.app/Contents",
+    "ztc.app/Contents/_CodeSignature",
+    "ztc.app/Contents/MacOS",
 ]
 files = {
-    "ZTerm.app/Contents/Info.plist": b"fixture plist",
-    "ZTerm.app/Contents/PkgInfo": b"APPL????",
-    "ZTerm.app/Contents/MacOS/ZTerm": struct.pack(
+    "ztc.app/Contents/Info.plist": b"fixture plist",
+    "ztc.app/Contents/PkgInfo": b"APPL????",
+    "ztc.app/Contents/MacOS/ZTerm": struct.pack(
         "<IIIIIIII", 0xFEEDFACF, cpu_type, 0, 2, 0, 0, 0, 0
     ),
-    "ZTerm.app/Contents/_CodeSignature/CodeResources": b"fixture signature",
+    "ztc.app/Contents/_CodeSignature/CodeResources": b"fixture signature",
+    "ztc.app/Contents/CodeResources": b"fixture notarization ticket",
 }
 with tarfile.open(archive_path, "w:gz") as archive:
     for name in directories:
@@ -62,7 +63,7 @@ with tarfile.open(archive_path, "w:gz") as archive:
     for name, contents in files.items():
         member = tarfile.TarInfo(name)
         member.size = len(contents)
-        member.mode = 0o755 if name.endswith("/ZTerm") else 0o644
+        member.mode = 0o755 if name.endswith("/ZTC") else 0o644
         archive.addfile(member, io.BytesIO(contents))
 `;
   await execFileAsync("python3", ["-c", builder, path, String(cpuType)]);
@@ -71,26 +72,27 @@ with tarfile.open(archive_path, "w:gz") as archive:
 function request(overrides = {}) {
   return {
     schema_version: 1,
-    product: "ZTerm",
+    product: "ZTC",
     channel: "preview",
     version: "0.2.0-preview.1",
-    release_tag: "zterm-preview-v0.2.0-preview.1",
+    release_tag: "ztc-desktop-preview-v0.2.0-preview.1",
     source_repository: "Epoch-ML/zerg",
     source_sha: SOURCE_SHA,
-    source_ref: "refs/tags/zterm-preview-v0.2.0-preview.1",
+    source_ref: "refs/tags/ztc-desktop-preview-v0.2.0-preview.1",
     requested_at: "2026-08-05T20:00:00.000Z",
+    npm: {name:"@zergai/ztc",version:"0.4.0-beta.2",integrity:"sha512-"+Buffer.alloc(64).toString("base64"),tarballUrl:"https://registry.npmjs.org/@zergai/ztc/-/ztc-0.4.0-beta.2.tgz"},
     ...overrides,
   };
 }
 
-test("accepts and canonicalizes the exact ZTerm preview request", () => {
+test("accepts and canonicalizes the exact ZTC preview request", () => {
   assert.deepEqual(validateReleaseRequest(request()), request());
 });
 
 test("rejects another product or source repository", () => {
   assert.throws(
     () => validateReleaseRequest(request({ product: "ZergLang IDE" })),
-    /product must equal ZTerm/,
+    /product must equal ZTC/,
   );
   assert.throws(
     () => validateReleaseRequest(request({ source_repository: "someone/fork" })),
@@ -106,8 +108,8 @@ test("stable permits only numeric MAJOR.MINOR.PATCH", () => {
           request({
             channel: "stable",
             version,
-            release_tag: `zterm-v${version}`,
-            source_ref: `refs/tags/zterm-v${version}`,
+            release_tag: `ztc-desktop-v${version}`,
+            source_ref: `refs/tags/ztc-desktop-v${version}`,
           }),
         ),
       /stable versions must use MAJOR\.MINOR\.PATCH/,
@@ -117,12 +119,12 @@ test("stable permits only numeric MAJOR.MINOR.PATCH", () => {
     request({
       channel: "stable",
       version: "12.34.567",
-      release_tag: "zterm-v12.34.567",
-      source_ref: "refs/tags/zterm-v12.34.567",
+      release_tag: "ztc-desktop-v12.34.567",
+      source_ref: "refs/tags/ztc-desktop-v12.34.567",
     }),
   );
-  assert.equal(stable.release_tag, "zterm-v12.34.567");
-  assert.equal(stable.source_ref, "refs/tags/zterm-v12.34.567");
+  assert.equal(stable.release_tag, "ztc-desktop-v12.34.567");
+  assert.equal(stable.source_ref, "refs/tags/ztc-desktop-v12.34.567");
 });
 
 test("rejects malformed provenance and extra policy fields", () => {
@@ -183,8 +185,8 @@ test("accepts strict preview SemVer and rejects malformed or noncanonical versio
   ]) {
     const value = request({
       version,
-      release_tag: `zterm-preview-v${version}`,
-      source_ref: `refs/tags/zterm-preview-v${version}`,
+      release_tag: `ztc-desktop-preview-v${version}`,
+      source_ref: `refs/tags/ztc-desktop-preview-v${version}`,
     });
     assert.equal(validateReleaseRequest(value).version, version);
   }
@@ -240,8 +242,8 @@ test("validates exact SHA, tag, and canonical UTC timestamp boundaries", () => {
     /source_sha must be a non-empty string/,
   );
   assert.throws(
-    () => validateReleaseRequest(request({ release_tag: "zterm-preview-v9.9.9" })),
-    /release_tag must equal zterm-preview-v0.2.0-preview.1/,
+    () => validateReleaseRequest(request({ release_tag: "ztc-desktop-preview-v9.9.9" })),
+    /release_tag must equal ztc-desktop-preview-v0.2.0-preview.1/,
   );
   for (const requested_at of [
     null,
@@ -490,7 +492,7 @@ test("workflow keeps signing, stable Apple identity, and Pages promotion fail-cl
   assert.ok(manifestIndex > compareIndex, "Pages manifest must be promoted last");
 });
 
-test("workflow builds only the native Apple Silicon ZTerm app contract", async () => {
+test("workflow builds only the native Apple Silicon ZTC app contract", async () => {
   const workflow = await readFile(
     new URL("../.github/workflows/release.yml", import.meta.url),
     "utf8",
@@ -499,8 +501,8 @@ test("workflow builds only the native Apple Silicon ZTerm app contract", async (
   assert.match(workflow, /ZTERM_RELEASE_VERSION/);
   assert.match(workflow, /ZTERM_UPDATE_CHANNEL/);
   assert.match(workflow, /package-zterm-macos\.mjs/);
-  assert.match(workflow, /ZTerm\.app\.tar\.gz/);
-  assert.match(workflow, /ZTerm_.*_aarch64\.dmg/);
+  assert.match(workflow, /ztc\.app\.tar\.gz/);
+  assert.match(workflow, /ztc_.*_aarch64\.dmg/);
   assert.match(workflow, /tests\/unit\/zterm_release_rerun\.test\.ts/);
   assert.doesNotMatch(workflow, /tauri build|src-tauri/);
 });
@@ -529,9 +531,9 @@ test("workflow isolates updater signing from every source-authored process", asy
     signJob,
     /Epoch-ML\/zerg(?:\.git)?|path: source|source\/ztc|SOURCE_DEPLOY_KEY|tests\//,
   );
-  assert.match(workflow, /name: .*unsigned ZTerm application/i);
-  assert.match(workflow, /name: .*Apple-signed ZTerm release payload/i);
-  assert.match(workflow, /name: .*signed ZTerm release payload/i);
+  assert.match(workflow, /name: .*unsigned ZTC application/i);
+  assert.match(workflow, /name: .*Apple-signed ZTC release payload/i);
+  assert.match(workflow, /name: .*signed ZTC release payload/i);
   assert.match(workflow, /publish:\s+[\s\S]*needs:\s+- validate\s+- sign/);
 });
 
@@ -551,7 +553,7 @@ test("workflow isolates Apple signing and notarization on a fresh non-executing 
   assert.match(appleJob, /runs-on: macos-15/);
   assert.match(
     appleJob,
-    /environment:\s+name: zterm-apple-\$\{\{ needs\.validate\.outputs\.channel \}\}/,
+    /environment:\s+name: zterm-apple-stable/,
   );
   assert.match(appleJob, /actions\/download-artifact@/);
   assert.match(appleJob, /ZTERM_APPLE_CERTIFICATE/);
@@ -580,13 +582,13 @@ test("stable publication signs and Gatekeeper-assesses the outer disk image", as
   );
   const stableDiskImageStep = appleJob.slice(
     appleJob.indexOf("Notarize and staple stable disk image"),
-    appleJob.indexOf("Upload Apple-signed ZTerm release payload"),
+    appleJob.indexOf("Upload Apple-signed ZTC release payload"),
   );
 
   assert.match(
     stableDiskImageStep,
-    /if: needs\.validate\.outputs\.channel == 'stable'/,
-    "the Developer ID disk-image operation must remain stable-only",
+    /codesign --force --timestamp/,
+    "every public desktop channel must sign its disk image",
   );
   assert.doesNotMatch(
     createStep,
@@ -635,7 +637,7 @@ test("stable publication signs and Gatekeeper-assesses the outer disk image", as
   );
 });
 
-test("credential-free verification rejects an unsigned stable disk image", async () => {
+test("credential-free verification rejects an unsigned disk image on every channel", async () => {
   const workflow = await readFile(
     new URL("../.github/workflows/release.yml", import.meta.url),
     "utf8",
@@ -645,7 +647,7 @@ test("credential-free verification rejects an unsigned stable disk image", async
     workflow.indexOf("  sign:"),
   );
   const diskImage = verifyJob.indexOf(
-    'dmg="$GITHUB_WORKSPACE/payload/ZTerm_${RELEASE_VERSION}_aarch64.dmg"',
+    'dmg="$GITHUB_WORKSPACE/payload/ztc_${RELEASE_VERSION}_aarch64.dmg"',
   );
   const imageIntegrity = verifyJob.indexOf('hdiutil verify "$dmg"');
   const signature = verifyJob.indexOf(
@@ -656,10 +658,8 @@ test("credential-free verification rejects an unsigned stable disk image", async
     'spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"',
   );
   const accepted = verifyJob.indexOf("grep -F 'source=Notarized Developer ID'", gatekeeper);
-  const stableBranch = verifyJob.indexOf(
-    'if [[ "$RELEASE_CHANNEL" == "stable" ]]; then',
-  );
-  const stableBranchEnd = verifyJob.indexOf("\n          fi", stableBranch);
+  assert.doesNotMatch(verifyJob, /if \[\[ "\$RELEASE_CHANNEL" == "stable" \]\]/);
+
 
   assert.ok(diskImage >= 0, "the downloaded signed payload must select the exact DMG");
   assert.ok(
@@ -667,13 +667,11 @@ test("credential-free verification rejects an unsigned stable disk image", async
     "every channel must reject a structurally invalid downloaded DMG",
   );
   assert.ok(
-    stableBranch > imageIntegrity &&
-      signature > stableBranch &&
+    signature > imageIntegrity &&
       ticket > signature &&
       gatekeeper > ticket &&
-      accepted > gatekeeper &&
-      stableBranchEnd > accepted,
-    "stable updater signing must wait for independent DMG signature, ticket, and Gatekeeper proof",
+      accepted > gatekeeper,
+    "every channel must wait for independent DMG signature, ticket, and Gatekeeper proof",
   );
 });
 
@@ -697,29 +695,19 @@ test("workflow reconstructs and fail-closed validates the flattened unsigned app
 
   assert.match(
     downloadStep,
-    /path: unsigned\/ZTerm\.app/,
-    "upload-artifact flattens the app directory, so download must recreate ZTerm.app",
+    /path: unsigned-transfer/,
+    "transfer the archive so GitHub cannot flatten executable modes",
   );
   assert.doesNotMatch(
     validationStep,
     /^\s*\[\[/m,
     "standalone [[ assertions do not fail a Bash errexit script",
   );
-  assert.match(validationStep, /test -d "\$app"/);
-  assert.match(validationStep, /test -z "\$\(find .* -type l -print -quit\)"/);
-  assert.match(
-    validationStep,
-    /test "\$\(find .* -type f \| wc -l \| tr -d ' '\)" = "3"/,
-  );
-  assert.match(validationStep, /test -f "\$app\/Contents\/Info\.plist"/);
-  assert.match(validationStep, /test -f "\$app\/Contents\/PkgInfo"/);
-  assert.match(validationStep, /test -f "\$executable"/);
-  assert.match(validationStep, /test -z "\$unexpected"/);
-  assert.match(validationStep, /file -b "\$executable" \| grep -F arm64/);
-  assert.match(validationStep, /Print :CFBundleIdentifier/);
-  assert.match(validationStep, /grep -Fx dev\.zerg\.zterm/);
+  assert.match(validationStep, /python3 scripts\/unpack-unsigned\.py unsigned-transfer\/ztc-unsigned\.tar\.gz unsigned/);
+  assert.match(validationStep, /node scripts\/inspect-bundle\.mjs/);
+  assert.match(validationStep, /"\$RELEASE_VERSION" "\$SOURCE_SHA"/);
   assert.match(validationStep, /Print :CFBundleExecutable/);
-  assert.match(validationStep, /grep -Fx ZTerm/);
+  assert.match(validationStep, /native-payloads\.txt/);
   assert.doesNotMatch(validationStep, /\$executable --version|ZTERM_SMOKE_BINARY/);
 });
 
@@ -736,7 +724,7 @@ test("workflow separates source, Apple, updater, and feed credential environment
   const updaterJob = workflow.slice(workflow.indexOf("  sign:"), workflow.indexOf("  publish:"));
   assert.match(buildJob, /environment: zterm-source/);
   assert.doesNotMatch(buildJob, /zterm-apple-|zterm-updater-/);
-  assert.match(appleJob, /name: zterm-apple-\$\{\{ needs\.validate\.outputs\.channel \}\}/);
+  assert.match(appleJob, /name: zterm-apple-stable/);
   assert.doesNotMatch(appleJob, /zterm-source|zterm-updater-/);
   assert.match(updaterJob, /name: zterm-updater-\$\{\{ needs\.validate\.outputs\.channel \}\}/);
   assert.doesNotMatch(updaterJob, /zterm-source|zterm-apple-/);
@@ -916,8 +904,8 @@ test("workflow smoke-tests before isolation and rechecks the exact signed applic
   const buildSmokeIndex = workflow.indexOf(
     "Smoke test the unsigned build before credential isolation",
   );
-  const unsignedUploadIndex = workflow.indexOf("Upload unsigned ZTerm application");
-  const signingIndex = workflow.indexOf("Sign ZTerm without launching its executable");
+  const unsignedUploadIndex = workflow.indexOf("Upload unsigned ZTC application");
+  const signingIndex = workflow.indexOf("Sign ZTC without launching its executable");
   const staplingIndex = workflow.indexOf("Notarize and staple stable application");
   const archiveIndex = workflow.indexOf("Create signed updater archive and disk image");
   const shippedSmokeIndex = workflow.indexOf(
@@ -1055,7 +1043,7 @@ test("workflow tells pre-protocol desktop sessions how to cross the update bridg
     "utf8",
   );
   const notice =
-    "Bridge notice: ZTC-launched ZTerm 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.";
+    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.";
 
   assert.equal(
     workflow.split(notice).length - 1,
@@ -1159,7 +1147,7 @@ test("workflow emits primary checksums in canonical codepoint order", async () =
     "utf8",
   );
   const buildStep = workflow.indexOf("Build and verify immutable signed release payload");
-  const uploadStep = workflow.indexOf("Upload signed ZTerm release payload", buildStep);
+  const uploadStep = workflow.indexOf("Upload signed ZTC release payload", buildStep);
   const payloadBuilder = workflow.slice(buildStep, uploadStep);
   const archiveChecksum = payloadBuilder.indexOf(
     `printf '%s  %s\\n' "$archive_sha" "$archive_name"`,
@@ -1212,7 +1200,7 @@ test("workflow recovers immutable releases only from canonical public bytes", as
   assert.match(publishJob, /max_expanded_bytes = 1024 \* 1024 \* 1024/);
   assert.match(
     publishJob,
-    /if sys\.argv\[2\] == "stable":[\s\S]*ZTerm\.app\/Contents\/CodeResources/,
+    /expected\["ztc\.app\/Contents\/CodeResources"\] = "file"/,
   );
   assert.match(
     publishJob,
@@ -1362,14 +1350,14 @@ test("workflow scopes updater private keys to presence-check and signer steps", 
   ]) {
     const references =
       workflow.match(new RegExp(`secrets\\.${secret} \\}\\}`, "g")) ?? [];
-    assert.equal(references.length, 2, `${secret} must be exposed to exactly two steps`);
+    assert.equal(references.length, 3, `${secret} must be exposed only to presence-check, archive signer and catalog signer`);
   }
   const credentialCheckIndex = workflow.indexOf("Require updater signing credential", signIndex);
   const signerIndex = workflow.indexOf("Sign and verify updater archive", signIndex);
-  const testIndex = workflow.indexOf("Test, lint, and audit ZTerm");
+  const testIndex = workflow.indexOf("Test, lint, and audit ZTC");
   const buildBinaryIndex = workflow.indexOf("Build release-stamped native binary");
   const appleImportIndex = workflow.indexOf("Require and import stable Apple identity");
-  const packageIndex = workflow.indexOf("Package unsigned ZTerm.app");
+  const packageIndex = workflow.indexOf("Package unsigned ztc.app");
   assert.ok(appleImportIndex > testIndex, "tests must run before unlocking Apple identity");
   assert.ok(appleImportIndex > buildBinaryIndex, "the binary must build before Apple import");
   assert.ok(packageIndex < appleImportIndex, "unsigned packaging must precede Apple credentials");

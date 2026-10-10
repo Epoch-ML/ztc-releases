@@ -79,9 +79,9 @@ function parseManifest(content, description) {
     typeof manifest !== "object" ||
     Array.isArray(manifest) ||
     manifest.schema_version !== 1 ||
-    manifest.product !== "ZTerm"
+    manifest.product !== "ZTC"
   ) {
-    throw new FeedPolicyError(`${description} manifest is not a ZTerm v1 feed`);
+    throw new FeedPolicyError(`${description} manifest is not a ZTC v1 feed`);
   }
   parseVersion(manifest.version, description);
   return manifest;
