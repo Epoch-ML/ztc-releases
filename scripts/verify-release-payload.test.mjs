@@ -282,7 +282,7 @@ async function makeFixture(t, request = REQUEST) {
           `ZTC ${request.version} (${request.channel}).`,
           `Built from immutable Epoch-ML/zerg source commit \`${request.source_sha}\`.`,
           "The updater archive is signed independently from the macOS application signature.",
-          "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
+          "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
         ].join("\n\n"),
         draft: false,
         prerelease: request.channel === "preview",
@@ -318,7 +318,7 @@ test("requires the signed-DMG bridge notice for pre-protocol desktop sessions", 
     `ZTC ${fixture.request.version} (${fixture.request.channel}).`,
     `Built from immutable Epoch-ML/zerg source commit \`${fixture.request.source_sha}\`.`,
     "The updater archive is signed independently from the macOS application signature.",
-    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.",
+    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
   ].join("\n\n");
   await writeFile(
     fixture.releaseJsonPath,
