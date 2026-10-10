@@ -1043,7 +1043,7 @@ test("workflow tells pre-protocol desktop sessions how to cross the update bridg
     "utf8",
   );
   const notice =
-    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once; automatic signed updates with session restoration resume from this release onward.";
+    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.";
 
   assert.equal(
     workflow.split(notice).length - 1,
@@ -1364,4 +1364,15 @@ test("workflow scopes updater private keys to presence-check and signer steps", 
   assert.ok(credentialCheckIndex > signIndex && signerIndex > credentialCheckIndex);
   assert.ok(signerIndex < publishIndex);
   assert.match(workflow.slice(signerIndex), /STABLE_PRIVATE_KEY_PASSWORD/);
+});
+
+
+test("release and activation notices do not imply an already active update feed", async () => {
+  const notice = "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.";
+  for (const [name, expectedCopies] of [["release.yml", 3], ["activate.yml", 1]]) {
+    const workflow = await readFile(new URL(`../.github/workflows/${name}`, import.meta.url), "utf8");
+    assert.equal(workflow.split(notice).length - 1, expectedCopies,
+      `${name} must distinguish update support from feed activation in every release notice`);
+    assert.doesNotMatch(workflow, /automatic signed updates with session restoration resume from this release onward/);
+  }
 });
