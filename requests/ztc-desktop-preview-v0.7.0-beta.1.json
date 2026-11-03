@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.7.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.7.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "fbac9c4b9709a604200a4865467591b4d31dbcf3",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.7.0-beta.1",
+  "requested_at": "2026-11-03T03:52:02.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.7.0-beta.1",
+    "integrity": "sha512-oO7rdkxZmS5auG71JcSibJ3WrAzV97sh9W0k8apfKiYyqRF3/2aqZDQmLUCEyoTTR4QWKp6zb2IUq4Rp+0X5lg==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.7.0-beta.1.tgz"
+  }
+}
