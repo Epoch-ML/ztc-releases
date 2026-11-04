@@ -47,7 +47,12 @@ trap cleanup 0
 trap 'exit 1' HUP INT TERM
 fetch() { curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 15 --max-time 180 --retry 2 --max-filesize "$3" --output "$2" "$1"; }
 manifest=$work/release.json
-fetch "https://epoch-ml.github.io/ztc-releases/$channel/release.json" "$manifest" 262144 || fail 'no verified release is published for this channel yet.'
+manifest_url="https://epoch-ml.github.io/ztc-releases/$channel/release.json"
+if [ "$channel" = preview ]; then manifest_url=https://zergai.com/downloads/ztc/releases.json; fi
+if ! fetch "$manifest_url" "$manifest" 262144; then
+  [ "$channel" != stable ] || fail 'no stable ZTC release is published yet. Install the preview: curl -fsSL https://zergai.com/install/ztc.sh | sh -s -- --preview'
+  fail 'no verified release is published for this channel yet.'
+fi
 [ "$(wc -c < "$manifest" | tr -d ' ')" -le 262144 ] || fail 'release manifest exceeds its size limit.'
 field() { plutil -extract "$1" raw -o - "${2:-$manifest}"; }
 [ "$(field schemaVersion)" = 1 ] && [ "$(field product)" = ZTC ] || fail 'unsupported release manifest.'
