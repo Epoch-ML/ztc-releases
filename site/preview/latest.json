@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "version": "0.8.0-beta.1",
+  "notes": "ZTC preview release from source 25bc5f194ad47cb6534776d9433e6619a8438bcf.",
+  "pub_date": "2026-11-03T21:13:54.000Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "sha256": "4e5bbcdcb1ee20cb8ba8f81795263956469f7e01ae8afd57091dc22baf3bb42c",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnBnTnNSaHNEVVR4N0hjL1lJSWYycmVlejI4eWhydWU2RUMwbThXSHBmQ09jd0U1RGx3TlJpQy9RanYrdncvVFd0QzFNYURwNlY4QXdXUDJnV3hPUVE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzQ0MDM0CWZpbGU6enRjLmFwcC50YXIuZ3oKVFo5UHJ3akJjOUxzYTFxR1lHd3A0QjhyTkVaMHorL1BtWUFvWHhQYXh4WlQra2UxaE13eVNLZEJvNWx4dWF6N1JKUHFRNmxVSkVTRFBIRk1wL2tuQXc9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.8.0-beta.1/ztc.app.tar.gz"
+    }
+  }
+}
