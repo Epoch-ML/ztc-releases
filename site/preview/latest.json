@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.9.0-beta.1",
-  "notes": "ZTC preview release from source eac530d341d6b7057b5fcc242ce3d9c835ceeeb1.",
-  "pub_date": "2026-11-04T06:15:51.000Z",
+  "version": "0.10.0-beta.1",
+  "notes": "ZTC preview release from source f987bf5a7f5b3b8c9b6ed6e5ace077242bdb2be6.",
+  "pub_date": "2026-11-05T21:32:21.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "1c933b68cec479fa842c7e815afc32ffe60e12daf4d07b750206e1ddfb2737bf",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnJoSUZrYy9HVnI3QUNmZUNUMzBEMlRvU1JtbHdTVjl2NWcyNGdCOEJpTnR5L0N5RVRwNGxra0Z3SXk0aHdtaWRvejNXYXlhMkdjdExGTUowOXV0MVFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzODE2NjU5CWZpbGU6enRjLmFwcC50YXIuZ3oKeUUxeWt5dFhHd1orS2tubW1JemhjUzlOODY3YzRCTnRuTkZ1TnMweFRldUQwSjdvTjdlOG5Nb1pnaGFoLzRQVnpqR0UweXB2ZDRPSGE4eWVwR2crQVE9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.9.0-beta.1/ztc.app.tar.gz"
+      "sha256": "257027ed766d2efad18a34e851e0cf8d95d7a9ee95ff396a5030dc3ec91920e6",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnR4VE5VQU40U21la2hBaHR2SEVZKzExb1V2NFUvNXNoZUh0djBJczZOc3cwajdKck9McnViQTNiQ3NaOTdzNHlNcC9sQTczVzhDRUJ0MjlIbTVVMGdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTE4NjQ0CWZpbGU6enRjLmFwcC50YXIuZ3oKbDNKVmwxYkRiMHJlc0RyVGZCcllYYzExblRoTlRxdlVBb2U2M3plLzZqeWhleTA4QUJacVF3Wi9VRmt1U0VnVkZ5cjdKZW5BUzdWUlpzeU1HSnh2REE9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.10.0-beta.1/ztc.app.tar.gz"
     }
   }
 }
