@@ -35,7 +35,14 @@ jobs:
           while IFS= read -r -d '' request <&3; do
             # The request validates first, which pins its npm registry URL.
             node scripts/release-request.mjs "$request" >/dev/null
-            tarball="$RUNNER_TEMP/$(basename "$request" .json).tgz"
+            # release.yml dispatches only requests/<release_tag>.json. Only
+            # that validated name is ever written into a workflow command.
+            release_tag="$(jq -r .release_tag "$request")"
+            if [[ "$request" != "requests/$release_tag.json" ]]; then
+              echo "::error::the request for $release_tag must be requests/$release_tag.json"
+              exit 1
+            fi
+            tarball="$RUNNER_TEMP/$release_tag.tgz"
             curl --fail --silent --show-error --location \
               --proto '=https' --proto-redir '=https' --max-time 180 \
               --output "$tarball" "$(jq -r .npm.tarballUrl "$request")"
