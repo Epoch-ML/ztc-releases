@@ -5,6 +5,7 @@ import {
   appendFile,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   rm,
   symlink,
@@ -628,7 +629,7 @@ async function npmFixture(t, manifest) {
   await mkdir(join(staging, "package"), { recursive: true });
   await writeFile(
     join(staging, "package", "package.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
+    typeof manifest === "string" ? manifest : `${JSON.stringify(manifest, null, 2)}\n`,
   );
   await writeFile(join(staging, "package", "README.md"), "ZTC\n");
   const tarball = join(root, "ztc-0.4.0-beta.2.tgz");
@@ -775,6 +776,72 @@ test("refuses an npm tarball that is not the request's exact artifact", async (t
     await rejectsWith(
       readReleaseRequestWithNpmNotes(fixture.requestPath, tarball),
       /^npm tarball has no readable package\/package\.json/,
+    );
+  }
+});
+
+test("refuses npm tarball paths that are not bounded regular files", async (t) => {
+  const fixture = await npmFixture(t, stampedPackage());
+  const link = join(fixture.root, "link.tgz");
+  await symlink(fixture.tarball, link);
+  const bounded = /^npm tarball must be a regular file of at most 268435456 bytes$/;
+  await rejectsWith(readReleaseRequestWithNpmNotes(fixture.requestPath, link), bounded);
+  await rejectsWith(readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.root), bounded);
+
+  const sized = join(fixture.root, "sized.tgz");
+  await writeFile(sized, "");
+  const handle = await open(sized, "r+");
+  await handle.truncate(256 * 1024 * 1024);
+  await handle.close();
+  // At the bound the bytes are read and hashed, and these are not the artifact.
+  await rejectsWith(
+    readReleaseRequestWithNpmNotes(fixture.requestPath, sized),
+    /^npm tarball does not match the request's npm integrity$/,
+  );
+  await appendFile(sized, Buffer.from([0]));
+  await rejectsWith(readReleaseRequestWithNpmNotes(fixture.requestPath, sized), bounded);
+});
+
+test("refuses corrupt npm tarballs and manifests without the request's npm identity", async (t) => {
+  {
+    // Not gzip: tar stops reading early, and the refusal must not crash the CLI.
+    const fixture = await npmFixture(t, stampedPackage());
+    const corrupt = Buffer.alloc(4 * 1024 * 1024, 0x5a);
+    await writeFile(fixture.tarball, corrupt);
+    await writeFile(
+      fixture.requestPath,
+      JSON.stringify({
+        ...fixture.identity,
+        npm: {
+          ...fixture.identity.npm,
+          integrity: `sha512-${createHash("sha512").update(corrupt).digest("base64")}`,
+        },
+      }),
+    );
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm tarball has no readable package\/package\.json/,
+    );
+  }
+  {
+    const fixture = await npmFixture(t, "{ not json\n");
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm tarball package\/package\.json is not valid JSON: /,
+    );
+  }
+  for (const manifest of [null, { ...stampedPackage(), name: "@zergai/other" }]) {
+    const fixture = await npmFixture(t, manifest);
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm package\.json must match the request's npm name and version$/,
+    );
+  }
+  for (const zergRelease of [undefined, null, "main"]) {
+    const fixture = await npmFixture(t, { ...stampedPackage(), zergRelease });
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm package zergRelease\.sourceCommit must equal the request's source_sha$/,
     );
   }
 });
