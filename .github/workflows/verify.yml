@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 2
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -19,3 +20,28 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
       - run: npm audit --audit-level=moderate
+      # A request is immutable once merged and tagged, so its notes must match
+      # its npm package now, not after the macOS build.
+      - name: Bind each request a pull request adds to its npm package
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # HEAD is the pull request's merge commit; HEAD^1 is the base it adds to.
+          base="$(git rev-parse --verify HEAD^1)"
+          changed="$RUNNER_TEMP/pull-request-requests"
+          git diff --name-only --no-renames --diff-filter=AM -z "$base" HEAD \
+            -- 'requests/*.json' >"$changed"
+          while IFS= read -r -d '' request <&3; do
+            # The request validates first, which pins its npm registry URL.
+            node scripts/release-request.mjs "$request" >/dev/null
+            tarball="$RUNNER_TEMP/$(basename "$request" .json).tgz"
+            curl --fail --silent --show-error --location \
+              --proto '=https' --proto-redir '=https' --max-time 180 \
+              --output "$tarball" "$(jq -r .npm.tarballUrl "$request")"
+            if ! node scripts/release-request.mjs "$request" "$tarball" \
+              | cmp -s - "$request"; then
+              echo "::error file=$request::$request must be exactly what release-request.mjs writes from its npm package, whats_new and changes included: node scripts/release-request.mjs REQUEST.json NPM.tgz"
+              exit 1
+            fi
+          done 3<"$changed"
