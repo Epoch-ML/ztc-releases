@@ -67,7 +67,9 @@ request, `verify.yml` runs this command on every request the pull request adds
 or changes, with the tarball from the request's pinned registry URL, and
 requires the committed bytes to equal its output. A request whose notes differ
 from the package's, that leaves out notes the package carries, or that is not
-in canonical form fails review before it becomes immutable.
+in canonical form fails review before it becomes immutable. `release.yml`
+repeats the check right after its build job downloads the npm package, before
+the macOS build.
 
 One set of release-note rules applies here and in the lane that publishes the
 npm package (`Epoch-ML/zerg`). Both repositories carry
@@ -104,6 +106,11 @@ Every workflow step that writes or compares release text applies
   when it is not empty.
 - GitHub Release body: the fixed paragraphs, then `What's new:` and, when there
   are changes, `All changes:`, each followed by one `- entry` line per entry.
+
+`release-notes.jq`, `release-notes.mjs` and the lane's own renderer must each
+write the exact bytes of every case in
+`scripts/fixtures/release-text-fixture.json`, which the lane carries byte for
+byte.
 
 `inspect-bundle.mjs` requires the signed app's bundled npm `package.json` to
 carry exactly the request's notes. A request without `whats_new` keeps the
