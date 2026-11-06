@@ -218,6 +218,11 @@ test("bundle inspection refuses a request for another release than the bundle", 
       inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), other),
       message("release request does not match the bundle's release version and source"),
     );
+    const otherSource = await writeRequest(f.root, { source_sha: "b".repeat(40) });
+    await assert.rejects(
+      inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), otherSource),
+      message("release request does not match the bundle's release version and source"),
+    );
   } finally {
     await rm(f.root, { recursive: true, force: true });
   }
