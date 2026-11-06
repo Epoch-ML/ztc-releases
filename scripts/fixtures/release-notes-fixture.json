@@ -1,0 +1,286 @@
+{
+  "rules_version": 1,
+  "rules": {
+    "entry": "one line of plain text equal to its own trim()",
+    "whats_new": "1 to 4 entries, each 1 to 140 code points",
+    "changes": "0 to 40 entries, each 1 to 300 code points",
+    "forbidden_characters": "\\p{Cc} \\p{Cs} \\p{Co} \\p{Zl} \\p{Zp}, and \\p{Cf} except U+200C and U+200D",
+    "forbidden_markup": "a backtick or asterisk anywhere; < followed by a letter, /, ! or ?; the sequence ](; an @mention: (^|[^A-Za-z0-9_])@[A-Za-z0-9-]",
+    "forbidden_leading_markers": "^(?:[-+•*] |#{1,6} |>|\\d{1,9}[.)] )"
+  },
+  "whats_new": {
+    "accept": [
+      "Faster startup.",
+      "The Updates window shows what is new in a release, with the full list of changes a click away.",
+      "Emoji with a joiner 👩‍💻 work.",
+      "Persian text with a zero-width non-joiner: نیم‌فاصله.",
+      "Paths like ~/.ztc/config.json load.",
+      "Fixes #123 and C# highlighting.",
+      "Comparisons such as a < b and x<5 render.",
+      "Mail a@b.com and snake_case_names stay plain.",
+      "[docs] pages open.",
+      "Version 1. Next steps are clearer.",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+    ],
+    "reject": [
+      {
+        "text": "",
+        "reason": "empty"
+      },
+      {
+        "text": " Leading space.",
+        "reason": "not trimmed"
+      },
+      {
+        "text": "Trailing space. ",
+        "reason": "not trimmed"
+      },
+      {
+        "text": "Two\nlines.",
+        "reason": "control character"
+      },
+      {
+        "text": "Tab\tinside.",
+        "reason": "control character"
+      },
+      {
+        "text": "Soft­hyphen.",
+        "reason": "format character"
+      },
+      {
+        "text": "Zero​width space.",
+        "reason": "format character"
+      },
+      {
+        "text": "Byte﻿order mark.",
+        "reason": "format character"
+      },
+      {
+        "text": "Bidi ‮override.",
+        "reason": "format character"
+      },
+      {
+        "text": "Line separator.",
+        "reason": "line separator"
+      },
+      {
+        "text": "Paragraph separator.",
+        "reason": "paragraph separator"
+      },
+      {
+        "text": "Private use  glyph.",
+        "reason": "private use"
+      },
+      {
+        "text": "Run `ztc update` now.",
+        "reason": "backtick"
+      },
+      {
+        "text": "Globs like src/* work.",
+        "reason": "asterisk"
+      },
+      {
+        "text": "A **bold** move.",
+        "reason": "asterisk"
+      },
+      {
+        "text": "A <b>tag</b> here.",
+        "reason": "html"
+      },
+      {
+        "text": "A <!-- comment -->.",
+        "reason": "html"
+      },
+      {
+        "text": "Read [the docs](https://example.com).",
+        "reason": "markdown link"
+      },
+      {
+        "text": "Thanks @alice for the fix.",
+        "reason": "mention"
+      },
+      {
+        "text": "@team ships it.",
+        "reason": "mention"
+      },
+      {
+        "text": "- Faster startup.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "• Faster startup.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "+ Faster startup.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "# Heading.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "> Quoted.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "1. First.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "2) Second.",
+        "reason": "leading block marker"
+      },
+      {
+        "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.",
+        "reason": "too long"
+      }
+    ]
+  },
+  "changes": {
+    "accept": [
+      "Faster startup.",
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb."
+    ],
+    "reject": [
+      {
+        "text": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.",
+        "reason": "too long"
+      },
+      {
+        "text": "Run `x`.",
+        "reason": "backtick"
+      }
+    ]
+  },
+  "lists": [
+    {
+      "whats_new": [],
+      "changes": [],
+      "valid": false,
+      "reason": "whats_new needs at least one entry"
+    },
+    {
+      "whats_new": [
+        "A.",
+        "B.",
+        "C.",
+        "D."
+      ],
+      "changes": [],
+      "valid": true,
+      "reason": "four highlights, no changes"
+    },
+    {
+      "whats_new": [
+        "A.",
+        "B.",
+        "C.",
+        "D.",
+        "E."
+      ],
+      "changes": [],
+      "valid": false,
+      "reason": "five highlights"
+    },
+    {
+      "whats_new": [
+        "A."
+      ],
+      "changes": [
+        "Change 1.",
+        "Change 2.",
+        "Change 3.",
+        "Change 4.",
+        "Change 5.",
+        "Change 6.",
+        "Change 7.",
+        "Change 8.",
+        "Change 9.",
+        "Change 10.",
+        "Change 11.",
+        "Change 12.",
+        "Change 13.",
+        "Change 14.",
+        "Change 15.",
+        "Change 16.",
+        "Change 17.",
+        "Change 18.",
+        "Change 19.",
+        "Change 20.",
+        "Change 21.",
+        "Change 22.",
+        "Change 23.",
+        "Change 24.",
+        "Change 25.",
+        "Change 26.",
+        "Change 27.",
+        "Change 28.",
+        "Change 29.",
+        "Change 30.",
+        "Change 31.",
+        "Change 32.",
+        "Change 33.",
+        "Change 34.",
+        "Change 35.",
+        "Change 36.",
+        "Change 37.",
+        "Change 38.",
+        "Change 39.",
+        "Change 40."
+      ],
+      "valid": true,
+      "reason": "forty changes"
+    },
+    {
+      "whats_new": [
+        "A."
+      ],
+      "changes": [
+        "Change 1.",
+        "Change 2.",
+        "Change 3.",
+        "Change 4.",
+        "Change 5.",
+        "Change 6.",
+        "Change 7.",
+        "Change 8.",
+        "Change 9.",
+        "Change 10.",
+        "Change 11.",
+        "Change 12.",
+        "Change 13.",
+        "Change 14.",
+        "Change 15.",
+        "Change 16.",
+        "Change 17.",
+        "Change 18.",
+        "Change 19.",
+        "Change 20.",
+        "Change 21.",
+        "Change 22.",
+        "Change 23.",
+        "Change 24.",
+        "Change 25.",
+        "Change 26.",
+        "Change 27.",
+        "Change 28.",
+        "Change 29.",
+        "Change 30.",
+        "Change 31.",
+        "Change 32.",
+        "Change 33.",
+        "Change 34.",
+        "Change 35.",
+        "Change 36.",
+        "Change 37.",
+        "Change 38.",
+        "Change 39.",
+        "Change 40.",
+        "Change 41."
+      ],
+      "valid": false,
+      "reason": "forty-one changes"
+    }
+  ]
+}

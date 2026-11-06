@@ -493,7 +493,7 @@ test("bounds the number of what's-new entries and changes", () => {
   );
 });
 
-test("bounds each entry in characters, not UTF-16 code units", () => {
+test("bounds each entry in code points, not UTF-16 code units", () => {
   const longestHighlight = ASTRAL.repeat(140);
   assert.equal(longestHighlight.length, 280);
   assert.deepEqual(
@@ -502,7 +502,7 @@ test("bounds each entry in characters, not UTF-16 code units", () => {
   );
   assert.throws(
     () => validateReleaseRequest(notedRequest({ whats_new: ["a".repeat(141)] })),
-    entryError("whats_new[0]", "must be at most 140 characters"),
+    entryError("whats_new[0]", "must be at most 140 code points (has 141)"),
   );
   const longestChange = `${"x".repeat(299)}…`;
   assert.deepEqual(
@@ -511,7 +511,7 @@ test("bounds each entry in characters, not UTF-16 code units", () => {
   );
   assert.throws(
     () => validateReleaseRequest(notedRequest({ changes: ["Fine.", "y".repeat(301)] })),
-    entryError("changes[1]", "must be at most 300 characters"),
+    entryError("changes[1]", "must be at most 300 code points (has 301)"),
   );
 });
 
@@ -524,6 +524,13 @@ test("accepts only one line of plain text per entry", () => {
     "Backslash \\ and \"quotes\" survive.",
     "--output-schema validates the final answer.",
     "Fixes and improvements.",
+    "Joiners stay: 👩\u200d💻, 🏳️\u200d🌈 and نیم\u200cفاصله.",
+    "####### Seven hashes are not a heading.",
+    "1234567890. Ten digits are not a list marker.",
+    "1.5 times faster, and -1 offsets work.",
+    "Mail me @ home; snake_@case and a@b.com stay plain.",
+    "[text] (url) with a space is not a link.",
+    "Arrows <- and <3 stay text.",
   ];
   assert.deepEqual(
     validateReleaseRequest(notedRequest({ whats_new: accepted.slice(0, 4), changes: accepted }))
@@ -531,53 +538,53 @@ test("accepts only one line of plain text per entry", () => {
     accepted,
   );
 
+  const leading = "must not begin with a list, heading or quote marker";
+  const html = "must not contain an HTML tag, comment or declaration";
   const rejected = [
     [7, "must be a non-empty string"],
     ["", "must be a non-empty string"],
     [" Leading space.", "must not begin or end with whitespace"],
     ["Trailing space. ", "must not begin or end with whitespace"],
     ["Ends in a line feed.\n", "must not begin or end with whitespace"],
+    ["Two\nlines.", "must not contain a control character (U+000A)"],
+    ["Tab\there.", "must not contain a control character (U+0009)"],
+    ["Bell\u0007.", "must not contain a control character (U+0007)"],
+    ["Delete\u007f.", "must not contain a control character (U+007F)"],
+    ["Next line\u0085.", "must not contain a control character (U+0085)"],
+    ["Line\u2028separator.", "must not contain a line separator (U+2028)"],
+    ["Paragraph\u2029separator.", "must not contain a paragraph separator (U+2029)"],
+    ["Right\u202eto left.", "must not contain a format character (U+202E)"],
+    ["Isolate\u2067text\u2069.", "must not contain a format character (U+2067)"],
+    ["Zero\u200bwidth.", "must not contain a format character (U+200B)"],
+    ["Byte order\ufeffmark.", "must not contain a format character (U+FEFF)"],
+    ["Soft\u00adhyphen.", "must not contain a format character (U+00AD)"],
+    ["Word\u2060joiner.", "must not contain a format character (U+2060)"],
+    ["Tag \u{1F3F4}\u{E0067}\u{E0062}\u{E007F} flag.", "must not contain a format character (U+E0067)"],
+    ["Lone\ud800surrogate.", "must not contain a lone surrogate (U+D800)"],
+    ["Private\ue000use.", "must not contain a private-use character (U+E000)"],
+    ["Plane fifteen \u{F0000} glyph.", "must not contain a private-use character (U+F0000)"],
+    ["**Bold lead.**", "must not contain an asterisk"],
+    ["Globs like *.ts match.", "must not contain an asterisk"],
+    ["* Starred bullet.", "must not contain an asterisk"],
+    ["`/update` runs the package's own ztc update.", "must not contain a backtick"],
+    ["Headless --output-schema <file> validates.", html],
+    ["Hidden <!-- comment -->.", html],
+    ["Closing </b> tag.", html],
+    ["A <?xml?> instruction.", html],
+    ["See [the docs](https://example.com).", "must not contain a Markdown link"],
+    ["Thanks @alice.", "must not contain an @mention"],
+    ["(@bob) reviewed it.", "must not contain an @mention"],
+    ["Reviewed by-@carol.", "must not contain an @mention"],
+    ["- Duplicated bullet.", leading],
+    ["+ Duplicated bullet.", leading],
+    ["• Duplicated bullet.", leading],
+    ["## Next release", leading],
+    ["###### Six hashes.", leading],
+    ["> Quoted.", leading],
+    [">Quoted.", leading],
+    ["1. First.", leading],
+    ["123456789) Ninth.", leading],
   ];
-  const controlOrFormat = [
-    "Two\nlines.",
-    "Tab\there.",
-    "Bell\u0007.",
-    "Delete\u007f.",
-    "Next line\u0085.",
-    "Line separator.",
-    "Paragraph separator.",
-    "Right‮to left.",
-    "Isolate⁧text⁩.",
-    "Zero​width.",
-    "Byte order﻿mark.",
-    "Lone\ud800surrogate.",
-    "Privateuse.",
-  ];
-  for (const text of controlOrFormat) {
-    rejected.push([
-      text,
-      "must be one line of plain text without control, format or separator characters",
-    ]);
-  }
-  for (const text of [
-    "**Bold lead.**",
-    "`/update` runs the package's own ztc update.",
-    "Headless --output-schema <file> validates.",
-    "Hidden <!-- comment -->.",
-    "Closing </b> tag.",
-  ]) {
-    rejected.push([text, "must be plain text without Markdown or HTML markup"]);
-  }
-  for (const text of [
-    "- Duplicated bullet.",
-    "+ Duplicated bullet.",
-    "• Duplicated bullet.",
-    "## Next release",
-    "> Quoted.",
-    ">Quoted.",
-  ]) {
-    rejected.push([text, "must not begin with a list, heading or quote marker"]);
-  }
   for (const [text, rule] of rejected) {
     assert.throws(
       () => validateReleaseRequest(notedRequest({ whats_new: ["Fine.", text] })),
@@ -848,11 +855,12 @@ test("refuses corrupt npm tarballs and manifests without the request's npm ident
 
 test("refuses notes in the npm package that break the release contract", async (t) => {
   const cases = [
-    [{ whatsNew: ["**Bold lead.**"], changes: [] }, /^zergRelease\.whatsNew\[0\] must be plain text without Markdown or HTML markup$/],
+    [{ whatsNew: ["**Bold lead.**"], changes: [] }, /^zergRelease\.whatsNew\[0\] must not contain an asterisk$/],
     [{ whatsNew: WHATS_NEW }, /^npm package zergRelease must carry whatsNew and changes together$/],
     [{ changes: CHANGES }, /^npm package zergRelease must carry whatsNew and changes together$/],
     [{ whatsNew: ["One.", "Two.", "Three.", "Four.", "Five."], changes: [] }, /^zergRelease\.whatsNew must contain 1-4 entries$/],
-    [{ whatsNew: WHATS_NEW, changes: ["Fine.", "Two\nlines."] }, /^zergRelease\.changes\[1\] must be one line of plain text/],
+    [{ whatsNew: WHATS_NEW, changes: ["Fine.", "Two\nlines."] }, /^zergRelease\.changes\[1\] must not contain a control character \(U\+000A\)$/],
+    [{ whatsNew: ["Thanks @alice."], changes: [] }, /^zergRelease\.whatsNew\[0\] must not contain an @mention$/],
   ];
   for (const [release, expected] of cases) {
     const fixture = await npmFixture(t, stampedPackage(release));
