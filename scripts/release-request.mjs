@@ -149,6 +149,11 @@ export async function readReleaseRequest(path) {
   return validateReleaseRequest(parsed);
 }
 
+// Stub: the npm tarball's notes are not copied yet.
+export async function readReleaseRequestWithNpmNotes(requestPath) {
+  return readReleaseRequest(requestPath);
+}
+
 async function main() {
   if (process.argv.length !== 3) {
     throw new ReleaseRequestError("usage: release-request.mjs REQUEST.json");

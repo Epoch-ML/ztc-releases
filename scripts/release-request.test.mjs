@@ -1,13 +1,24 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import {
+  appendFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import test from "node:test";
 
 import {
   readReleaseRequest,
+  readReleaseRequestWithNpmNotes,
   ReleaseRequestError,
   validateReleaseRequest,
 } from "./release-request.mjs";
@@ -383,15 +394,15 @@ test("reads only bounded regular JSON request files", async () => {
     );
 
     const exactLimit = join(directory, "exact-limit.json");
-    await writeFile(exactLimit, canonical.padEnd(16 * 1024, " "));
+    await writeFile(exactLimit, canonical.padEnd(64 * 1024, " "));
     assert.deepEqual(await readReleaseRequest(exactLimit), request());
 
     const overLimit = join(directory, "over-limit.json");
-    await writeFile(overLimit, canonical.padEnd(16 * 1024 + 1, " "));
+    await writeFile(overLimit, canonical.padEnd(64 * 1024 + 1, " "));
     await assert.rejects(
       readReleaseRequest(overLimit),
       (error) =>
-        error instanceof ReleaseRequestError && /exceeds 16384 bytes/.test(error.message),
+        error instanceof ReleaseRequestError && /exceeds 65536 bytes/.test(error.message),
     );
 
     const malformed = join(directory, "malformed.json");
@@ -403,6 +414,410 @@ test("reads only bounded regular JSON request files", async () => {
     );
   } finally {
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+const WHATS_NEW = [
+  "Panes keep the name you give them.",
+  "Resumed sessions draw at once.",
+];
+const CHANGES = [
+  "A renamed pane keeps its name in the desktop app.",
+  "Session resume no longer spends seconds before drawing.",
+];
+// U+1D400 is one character but two UTF-16 code units and four UTF-8 bytes.
+const ASTRAL = "\u{1D400}";
+
+function notedRequest(overrides = {}) {
+  return request({ whats_new: [...WHATS_NEW], changes: [...CHANGES], ...overrides });
+}
+
+function entryError(field, rule) {
+  return (error) => {
+    assert.equal(error.name, "ReleaseRequestError");
+    assert.equal(error.message, `${field} ${rule}`);
+    return true;
+  };
+}
+
+test("accepts what's-new notes and returns them after the release identity", () => {
+  const canonical = validateReleaseRequest(notedRequest());
+  assert.deepEqual(canonical, notedRequest());
+  assert.deepEqual(Object.keys(canonical), [
+    ...Object.keys(request()),
+    "whats_new",
+    "changes",
+  ]);
+  const withoutChanges = validateReleaseRequest(notedRequest({ changes: [] }));
+  assert.deepEqual(withoutChanges.changes, []);
+  assert.deepEqual(withoutChanges.whats_new, WHATS_NEW);
+  assert.equal(Object.hasOwn(validateReleaseRequest(request()), "whats_new"), false);
+});
+
+test("requires whats_new and changes together", () => {
+  for (const partial of [
+    request({ whats_new: [...WHATS_NEW] }),
+    request({ changes: [...CHANGES] }),
+  ]) {
+    assert.throws(
+      () => validateReleaseRequest(partial),
+      entryError("whats_new and changes", "must be present together"),
+    );
+  }
+});
+
+test("bounds the number of what's-new entries and changes", () => {
+  for (const whats_new of [[], ["One.", "Two.", "Three.", "Four.", "Five."]]) {
+    assert.throws(
+      () => validateReleaseRequest(notedRequest({ whats_new })),
+      entryError("whats_new", "must contain 1-4 entries"),
+    );
+  }
+  const four = ["One.", "Two.", "Three.", "Four."];
+  assert.deepEqual(validateReleaseRequest(notedRequest({ whats_new: four })).whats_new, four);
+
+  const forty = Array.from({ length: 40 }, (_, index) => `Change ${index + 1}.`);
+  assert.equal(validateReleaseRequest(notedRequest({ changes: forty })).changes.length, 40);
+  assert.throws(
+    () => validateReleaseRequest(notedRequest({ changes: [...forty, "Change 41."] })),
+    entryError("changes", "must contain 0-40 entries"),
+  );
+  assert.throws(
+    () => validateReleaseRequest(notedRequest({ whats_new: "Faster." })),
+    entryError("whats_new", "must be an array of strings"),
+  );
+  assert.throws(
+    () => validateReleaseRequest(notedRequest({ changes: null })),
+    entryError("changes", "must be an array of strings"),
+  );
+});
+
+test("bounds each entry in characters, not UTF-16 code units", () => {
+  const longestHighlight = ASTRAL.repeat(140);
+  assert.equal(longestHighlight.length, 280);
+  assert.deepEqual(
+    validateReleaseRequest(notedRequest({ whats_new: [longestHighlight] })).whats_new,
+    [longestHighlight],
+  );
+  assert.throws(
+    () => validateReleaseRequest(notedRequest({ whats_new: ["a".repeat(141)] })),
+    entryError("whats_new[0]", "must be at most 140 characters"),
+  );
+  const longestChange = `${"x".repeat(299)}…`;
+  assert.deepEqual(
+    validateReleaseRequest(notedRequest({ changes: [ASTRAL.repeat(300), longestChange] })).changes,
+    [ASTRAL.repeat(300), longestChange],
+  );
+  assert.throws(
+    () => validateReleaseRequest(notedRequest({ changes: ["Fine.", "y".repeat(301)] })),
+    entryError("changes[1]", "must be at most 300 characters"),
+  );
+});
+
+test("accepts only one line of plain text per entry", () => {
+  const accepted = [
+    "Café menus show naïve “smart quotes” — and 😀 emoji.",
+    "Ctrl+B z zooms the focused pane.",
+    "Settings -> Panes, and 2 < 3 still reads as text.",
+    "#1 request: /rename keeps a pane's name.",
+    "Backslash \\ and \"quotes\" survive.",
+    "--output-schema validates the final answer.",
+    "Fixes and improvements.",
+  ];
+  assert.deepEqual(
+    validateReleaseRequest(notedRequest({ whats_new: accepted.slice(0, 4), changes: accepted }))
+      .changes,
+    accepted,
+  );
+
+  const rejected = [
+    [7, "must be a non-empty string"],
+    ["", "must be a non-empty string"],
+    [" Leading space.", "must not begin or end with whitespace"],
+    ["Trailing space. ", "must not begin or end with whitespace"],
+    ["Ends in a line feed.\n", "must not begin or end with whitespace"],
+  ];
+  const controlOrFormat = [
+    "Two\nlines.",
+    "Tab\there.",
+    "Bell\u0007.",
+    "Delete\u007f.",
+    "Next line\u0085.",
+    "Line separator.",
+    "Paragraph separator.",
+    "Right‮to left.",
+    "Isolate⁧text⁩.",
+    "Zero​width.",
+    "Byte order﻿mark.",
+    "Lone\ud800surrogate.",
+    "Privateuse.",
+  ];
+  for (const text of controlOrFormat) {
+    rejected.push([
+      text,
+      "must be one line of plain text without control, format or separator characters",
+    ]);
+  }
+  for (const text of [
+    "**Bold lead.**",
+    "`/update` runs the package's own ztc update.",
+    "Headless --output-schema <file> validates.",
+    "Hidden <!-- comment -->.",
+    "Closing </b> tag.",
+  ]) {
+    rejected.push([text, "must be plain text without Markdown or HTML markup"]);
+  }
+  for (const text of [
+    "- Duplicated bullet.",
+    "+ Duplicated bullet.",
+    "• Duplicated bullet.",
+    "## Next release",
+    "> Quoted.",
+    ">Quoted.",
+  ]) {
+    rejected.push([text, "must not begin with a list, heading or quote marker"]);
+  }
+  for (const [text, rule] of rejected) {
+    assert.throws(
+      () => validateReleaseRequest(notedRequest({ whats_new: ["Fine.", text] })),
+      entryError("whats_new[1]", rule),
+      JSON.stringify(text),
+    );
+    assert.throws(
+      () => validateReleaseRequest(notedRequest({ changes: [text] })),
+      entryError("changes[0]", rule),
+      JSON.stringify(text),
+    );
+  }
+});
+
+test("reads the largest possible noted request within the request size bound", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "ztc-largest-request-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const largest = notedRequest({
+    whats_new: Array.from({ length: 4 }, () => ASTRAL.repeat(140)),
+    changes: Array.from({ length: 40 }, () => ASTRAL.repeat(300)),
+  });
+  const bytes = `${JSON.stringify(largest, null, 2)}\n`;
+  assert.ok(Buffer.byteLength(bytes) > 16 * 1024, "the fixture must exceed the old bound");
+  const path = join(directory, "largest.json");
+  await writeFile(path, bytes);
+  assert.deepEqual(await readReleaseRequest(path), largest);
+});
+
+const RELEASE_REQUEST_SCRIPT = fileURLToPath(new URL("./release-request.mjs", import.meta.url));
+
+function stampedPackage(release = {}) {
+  return {
+    name: "@zergai/ztc",
+    version: "0.4.0-beta.2",
+    zergRelease: {
+      branch: "main",
+      channel: "next",
+      sourceCommit: SOURCE_SHA,
+      sourceVersion: "0.4.0-canary.1",
+      ...release,
+    },
+  };
+}
+
+async function npmFixture(t, manifest) {
+  const root = await mkdtemp(join(tmpdir(), "ztc-npm-notes-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const staging = join(root, "staging");
+  await mkdir(join(staging, "package"), { recursive: true });
+  await writeFile(
+    join(staging, "package", "package.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await writeFile(join(staging, "package", "README.md"), "ZTC\n");
+  const tarball = join(root, "ztc-0.4.0-beta.2.tgz");
+  // tar is a process boundary; COPYFILE_DISABLE keeps macOS metadata files out.
+  await execFileAsync("tar", ["-czf", tarball, "-C", staging, "package"], {
+    env: { ...process.env, COPYFILE_DISABLE: "1" },
+  });
+  const integrity = `sha512-${createHash("sha512")
+    .update(await readFile(tarball))
+    .digest("base64")}`;
+  const identity = request({
+    npm: {
+      name: "@zergai/ztc",
+      version: "0.4.0-beta.2",
+      integrity,
+      tarballUrl: "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.4.0-beta.2.tgz",
+    },
+  });
+  const requestPath = join(root, "request.json");
+  await writeFile(requestPath, `${JSON.stringify(identity, null, 2)}\n`);
+  return { root, tarball, identity, requestPath };
+}
+
+async function rejectsWith(promise, expected) {
+  await assert.rejects(promise, (error) => {
+    assert.equal(error.name, "ReleaseRequestError");
+    assert.match(error.message, expected);
+    return true;
+  });
+}
+
+test("copies what's-new notes from the integrity-pinned npm tarball into the request", async (t) => {
+  const fixture = await npmFixture(
+    t,
+    stampedPackage({ whatsNew: WHATS_NEW, changes: CHANGES }),
+  );
+  const noted = await readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball);
+  assert.deepEqual(noted, { ...fixture.identity, whats_new: WHATS_NEW, changes: CHANGES });
+
+  const empty = await npmFixture(t, stampedPackage({ whatsNew: ["Fixes and improvements."], changes: [] }));
+  assert.deepEqual(await readReleaseRequestWithNpmNotes(empty.requestPath, empty.tarball), {
+    ...empty.identity,
+    whats_new: ["Fixes and improvements."],
+    changes: [],
+  });
+});
+
+test("the request CLI writes a canonical noted request that re-validates byte for byte", async (t) => {
+  const fixture = await npmFixture(
+    t,
+    stampedPackage({ whatsNew: WHATS_NEW, changes: CHANGES }),
+  );
+  const written = await execFileAsync(process.execPath, [
+    RELEASE_REQUEST_SCRIPT,
+    fixture.requestPath,
+    fixture.tarball,
+  ]);
+  assert.equal(written.stderr, "");
+  assert.equal(
+    written.stdout,
+    `${JSON.stringify({ ...fixture.identity, whats_new: WHATS_NEW, changes: CHANGES }, null, 2)}\n`,
+  );
+  const notedPath = join(fixture.root, "noted.json");
+  await writeFile(notedPath, written.stdout);
+  const validated = await execFileAsync(process.execPath, [RELEASE_REQUEST_SCRIPT, notedPath]);
+  assert.equal(validated.stdout, written.stdout);
+  const rerun = await execFileAsync(process.execPath, [
+    RELEASE_REQUEST_SCRIPT,
+    notedPath,
+    fixture.tarball,
+  ]);
+  assert.equal(rerun.stdout, written.stdout);
+
+  await assert.rejects(
+    execFileAsync(process.execPath, [
+      RELEASE_REQUEST_SCRIPT,
+      notedPath,
+      fixture.tarball,
+      "extra",
+    ]),
+    (error) => {
+      assert.equal(error.code, 1);
+      assert.match(error.stderr, /usage: release-request\.mjs REQUEST\.json \[NPM_TARBALL\.tgz\]/);
+      return true;
+    },
+  );
+});
+
+test("keeps the original request when the npm tarball carries no notes", async (t) => {
+  const fixture = await npmFixture(t, stampedPackage());
+  const kept = await readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball);
+  assert.deepEqual(kept, fixture.identity);
+  assert.equal(Object.hasOwn(kept, "whats_new"), false);
+});
+
+test("refuses an npm tarball that is not the request's exact artifact", async (t) => {
+  {
+    const fixture = await npmFixture(t, stampedPackage({ whatsNew: WHATS_NEW, changes: CHANGES }));
+    await appendFile(fixture.tarball, Buffer.from([0]));
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm tarball does not match the request's npm integrity$/,
+    );
+  }
+  {
+    const fixture = await npmFixture(
+      t,
+      stampedPackage({ sourceCommit: "b".repeat(40), whatsNew: WHATS_NEW, changes: CHANGES }),
+    );
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm package zergRelease\.sourceCommit must equal the request's source_sha$/,
+    );
+  }
+  {
+    const fixture = await npmFixture(t, {
+      ...stampedPackage({ whatsNew: WHATS_NEW, changes: CHANGES }),
+      version: "0.4.0-beta.3",
+    });
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^npm package\.json must match the request's npm name and version$/,
+    );
+  }
+  {
+    const root = await mkdtemp(join(tmpdir(), "ztc-npm-missing-"));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    const fixture = await npmFixture(t, stampedPackage());
+    const staging = join(root, "package");
+    await mkdir(staging);
+    await writeFile(join(staging, "README.md"), "no manifest\n");
+    const tarball = join(root, "empty.tgz");
+    await execFileAsync("tar", ["-czf", tarball, "-C", root, "package"], {
+      env: { ...process.env, COPYFILE_DISABLE: "1" },
+    });
+    const identity = {
+      ...fixture.identity,
+      npm: {
+        ...fixture.identity.npm,
+        integrity: `sha512-${createHash("sha512").update(await readFile(tarball)).digest("base64")}`,
+      },
+    };
+    await writeFile(fixture.requestPath, JSON.stringify(identity));
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, tarball),
+      /^npm tarball has no readable package\/package\.json/,
+    );
+  }
+});
+
+test("refuses notes in the npm package that break the release contract", async (t) => {
+  const cases = [
+    [{ whatsNew: ["**Bold lead.**"], changes: [] }, /^zergRelease\.whatsNew\[0\] must be plain text without Markdown or HTML markup$/],
+    [{ whatsNew: WHATS_NEW }, /^npm package zergRelease must carry whatsNew and changes together$/],
+    [{ changes: CHANGES }, /^npm package zergRelease must carry whatsNew and changes together$/],
+    [{ whatsNew: ["One.", "Two.", "Three.", "Four.", "Five."], changes: [] }, /^zergRelease\.whatsNew must contain 1-4 entries$/],
+    [{ whatsNew: WHATS_NEW, changes: ["Fine.", "Two\nlines."] }, /^zergRelease\.changes\[1\] must be one line of plain text/],
+  ];
+  for (const [release, expected] of cases) {
+    const fixture = await npmFixture(t, stampedPackage(release));
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      expected,
+    );
+  }
+});
+
+test("refuses a request whose notes are not the npm package's notes", async (t) => {
+  {
+    const fixture = await npmFixture(t, stampedPackage({ whatsNew: WHATS_NEW, changes: CHANGES }));
+    await writeFile(
+      fixture.requestPath,
+      JSON.stringify({ ...fixture.identity, whats_new: ["Typed by hand."], changes: CHANGES }),
+    );
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^the request's what's-new notes do not match the npm package's zergRelease$/,
+    );
+  }
+  {
+    const fixture = await npmFixture(t, stampedPackage());
+    await writeFile(
+      fixture.requestPath,
+      JSON.stringify({ ...fixture.identity, whats_new: WHATS_NEW, changes: CHANGES }),
+    );
+    await rejectsWith(
+      readReleaseRequestWithNpmNotes(fixture.requestPath, fixture.tarball),
+      /^the request's what's-new notes do not match the npm package's zergRelease$/,
+    );
   }
 });
 
@@ -1042,11 +1457,20 @@ test("workflow tells pre-protocol desktop sessions how to cross the update bridg
     new URL("../.github/workflows/release.yml", import.meta.url),
     "utf8",
   );
+  const releaseText = await readFile(
+    new URL("./release-notes.jq", import.meta.url),
+    "utf8",
+  );
   const notice =
     "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.";
 
   assert.equal(
-    workflow.split(notice).length - 1,
+    releaseText.split(notice).length - 1,
+    1,
+    "the shared release text must carry the bridge notice",
+  );
+  assert.equal(
+    workflow.split(`'include "release-notes"; release_body'`).length - 1,
     3,
     "draft creation and both immutable recovery paths must publish the bridge notice",
   );
@@ -1369,10 +1793,18 @@ test("workflow scopes updater private keys to presence-check and signer steps", 
 
 test("release and activation notices do not imply an already active update feed", async () => {
   const notice = "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.";
-  for (const [name, expectedCopies] of [["release.yml", 3], ["activate.yml", 1]]) {
+  for (const name of ["release-notes.jq", "release-notes.mjs"]) {
+    const text = await readFile(new URL(`./${name}`, import.meta.url), "utf8");
+    assert.equal(text.split(notice).length - 1, 1,
+      `${name} must distinguish update support from feed activation in the release notice`);
+    assert.doesNotMatch(text, /automatic signed updates with session restoration resume from this release onward/);
+  }
+  for (const [name, expectedBodies] of [["release.yml", 3], ["activate.yml", 1]]) {
     const workflow = await readFile(new URL(`../.github/workflows/${name}`, import.meta.url), "utf8");
-    assert.equal(workflow.split(notice).length - 1, expectedCopies,
-      `${name} must distinguish update support from feed activation in every release notice`);
+    assert.equal(workflow.split(notice).length - 1, 0,
+      `${name} must take every release notice from the shared release text`);
+    assert.equal(workflow.split(`'include "release-notes"; release_body'`).length - 1, expectedBodies,
+      `${name} must derive every release body from its immutable request`);
     assert.doesNotMatch(workflow, /automatic signed updates with session restoration resume from this release onward/);
   }
 });
