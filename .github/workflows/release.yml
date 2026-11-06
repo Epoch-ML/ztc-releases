@@ -302,6 +302,18 @@ jobs:
           echo "ZTC_DESKTOP_NODE_ROOT=$RUNNER_TEMP/node-v22.23.2-darwin-arm64" >> "$GITHUB_ENV"
           echo "ZTC_DESKTOP_NPM_TARBALL=$RUNNER_TEMP/ztc-npm.tgz" >> "$GITHUB_ENV"
 
+      # Notes that differ from the package fail here, not after the macOS build.
+      - name: Bind the request to the exact npm package before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          request="release-index/requests/$ZTERM_RELEASE_TAG.json"
+          if ! node release-index/scripts/release-request.mjs "$request" "$RUNNER_TEMP/ztc-npm.tgz" \
+            | cmp -s - "$request"; then
+            echo "::error::$request must be exactly what release-request.mjs writes from the npm package, whats_new and changes included"
+            exit 1
+          fi
+
       - name: Install pinned Rust toolchain
         shell: bash
         run: |
