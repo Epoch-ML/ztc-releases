@@ -62,7 +62,12 @@ node scripts/release-request.mjs request.json ztc-<version>.tgz > requests/<tag>
 
 This checks the tarball against the request's SHA-512 integrity, npm name and
 version, and `zergRelease.sourceCommit` against `source_sha`, then prints the
-canonical request with the notes as `whats_new` and `changes`.
+canonical request with the notes as `whats_new` and `changes`. On a pull
+request, `verify.yml` runs this command on every request the pull request adds
+or changes, with the tarball from the request's pinned registry URL, and
+requires the committed bytes to equal its output. A request whose notes differ
+from the package's, that leaves out notes the package carries, or that is not
+in canonical form fails review before it becomes immutable.
 
 One set of release-note rules applies here and in the lane that publishes the
 npm package (`Epoch-ML/zerg`). Both repositories carry
