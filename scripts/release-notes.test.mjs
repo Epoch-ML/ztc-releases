@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,6 +14,11 @@ import { readReleaseRequest } from "./release-request.mjs";
 const execFileAsync = promisify(execFile);
 const SCRIPTS = fileURLToPath(new URL(".", import.meta.url));
 const REQUESTS = fileURLToPath(new URL("../requests/", import.meta.url));
+// The release text the lane (Epoch-ML/zerg whats-new.mjs body and feed) must
+// produce too: it carries this file byte for byte. Change it in both.
+const RELEASE_TEXT_BYTES = await readFile(new URL("./fixtures/release-text-fixture.json", import.meta.url));
+const RELEASE_TEXT = JSON.parse(RELEASE_TEXT_BYTES.toString("utf8"));
+const RELEASE_TEXT_SHA256 = "94870f88b7d2b996425b3f748a6ec262bf31d9e0db20d0870268053d4d83de72";
 const workflows = {
   "release.yml": await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"),
   "activate.yml": await readFile(new URL("../.github/workflows/activate.yml", import.meta.url), "utf8"),
@@ -322,4 +328,54 @@ test("workflows type no release text and bind every bundle's notes to the reques
   assert.deepEqual(inspections(workflows["activate.yml"]), [
     'node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" "index/requests/${RELEASE_TAG}.json" > /dev/null',
   ]);
+});
+
+test("release-notes.jq and release-notes.mjs write every case of the shared release text", async (t) => {
+  assert.equal(createHash("sha256").update(RELEASE_TEXT_BYTES).digest("hex"), RELEASE_TEXT_SHA256);
+  assert.equal(RELEASE_TEXT.text_version, 1);
+  assert.equal(RELEASE_TEXT.cases.length, 6);
+  const directory = await temporaryDirectory(t);
+  for (const { name, request, release_body, latest } of RELEASE_TEXT.cases) {
+    const path = await writeRequest(directory, request);
+    assert.deepEqual(await readReleaseRequest(path), request, `${name}: the request must be valid`);
+    const expected = { body: release_body, latest };
+    const byJq = {
+      body: await jqRelease(path, "release_body"),
+      latest: JSON.parse(await jqRelease(path, "{notes: latest_notes} + latest_changes", "-c")),
+    };
+    assert.deepEqual(byJq, expected, `${name}: release-notes.jq`);
+    assert.deepEqual(Object.keys(byJq.latest), Object.keys(latest), `${name}: latest.json key order`);
+    const changes = latestChanges(request);
+    const byVerifier = {
+      body: releaseBody(request),
+      latest: { notes: latestNotes(request), ...(changes === null ? {} : { changes }) },
+    };
+    assert.deepEqual(byVerifier, expected, `${name}: release-notes.mjs`);
+  }
+});
+
+test("every body and latest.json step of the workflows writes the shared release text", async (t) => {
+  const end = workflows["release.yml"].indexOf(">payload/latest.json") + ">payload/latest.json".length;
+  const builder = workflows["release.yml"]
+    .slice(workflows["release.yml"].lastIndexOf("\n          jq", end) + 1, end)
+    .replace(/^ {10}/gm, "");
+  const steps = [...bodySteps(workflows["release.yml"]), ...bodySteps(workflows["activate.yml"])];
+  assert.equal(steps.length, 4);
+  for (const { name, request, release_body, latest } of RELEASE_TEXT.cases) {
+    for (const step of steps) {
+      const { result } = await runStep(t, `${step}\ncat -- "$notes"`, request, "index");
+      assert.equal(result.status, 0, `${name}: ${result.stderr}`);
+      assert.equal(result.stdout, release_body, `${name}: ${step.split("\n")[0]}`);
+    }
+    const { root, result } = await runStep(t, builder, request, "release-index", {
+      archive_sha: "c".repeat(64),
+      archive_url: `https://github.com/Epoch-ML/ztc-releases/releases/download/${request.release_tag}/ztc.app.tar.gz`,
+      signature: "c2lnbmF0dXJl",
+      RELEASE_DATE: request.requested_at,
+    });
+    assert.equal(result.status, 0, `${name}: ${result.stderr}`);
+    const manifest = JSON.parse(await readFile(join(root, "payload", "latest.json"), "utf8"));
+    const written = { notes: manifest.notes, ...(Object.hasOwn(manifest, "changes") ? { changes: manifest.changes } : {}) };
+    assert.deepEqual(written, latest, `${name}: latest.json`);
+  }
 });

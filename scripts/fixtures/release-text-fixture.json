@@ -1,0 +1,283 @@
+{
+  "text_version": 1,
+  "about": "Release text for a request: the GitHub Release body (no trailing newline) and the latest.json notes and changes (changes only when not empty). The publisher's release-notes.jq and release-notes.mjs and the lane's whats-new.mjs body and feed must produce these bytes.",
+  "cases": [
+    {
+      "name": "a request without notes keeps the text every earlier release published",
+      "request": {
+        "schema_version": 1,
+        "product": "ZTC",
+        "channel": "preview",
+        "version": "0.11.0-beta.1",
+        "release_tag": "ztc-desktop-preview-v0.11.0-beta.1",
+        "source_repository": "Epoch-ML/zerg",
+        "source_sha": "eedc94d57cd6224856beab9b16b5d6c235978ece",
+        "source_ref": "refs/tags/ztc-desktop-preview-v0.11.0-beta.1",
+        "requested_at": "2026-11-05T22:12:46.000Z",
+        "npm": {
+          "name": "@zergai/ztc",
+          "version": "0.11.0-beta.1",
+          "integrity": "sha512-ZWQYJ2s3gY074h78S8B953SO1L2cV7fuHmgnLtL9Uq1fQDvaCbM6ItfQd/TQ9P8QwraPutIPqFF7HXgJXT7xRw==",
+          "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.11.0-beta.1.tgz"
+        }
+      },
+      "release_body": "ZTC 0.11.0-beta.1 (preview).\n\nBuilt from immutable Epoch-ML/zerg source commit `eedc94d57cd6224856beab9b16b5d6c235978ece`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
+      "latest": {
+        "notes": "ZTC preview release from source eedc94d57cd6224856beab9b16b5d6c235978ece."
+      }
+    },
+    {
+      "name": "highlights and changes",
+      "request": {
+        "schema_version": 1,
+        "product": "ZTC",
+        "channel": "preview",
+        "version": "0.12.0-beta.1",
+        "release_tag": "ztc-desktop-preview-v0.12.0-beta.1",
+        "source_repository": "Epoch-ML/zerg",
+        "source_sha": "1234567890abcdef1234567890abcdef12345678",
+        "source_ref": "refs/tags/ztc-desktop-preview-v0.12.0-beta.1",
+        "requested_at": "2026-11-12T18:00:00.000Z",
+        "npm": {
+          "name": "@zergai/ztc",
+          "version": "0.12.0-beta.1",
+          "integrity": "sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==",
+          "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.12.0-beta.1.tgz"
+        },
+        "whats_new": [
+          "Panes keep the name you give them.",
+          "Resumed sessions draw at once."
+        ],
+        "changes": [
+          "A renamed pane keeps its name in the desktop app.",
+          "Session resume no longer spends seconds before drawing.",
+          "ztc update installs a release published minutes earlier."
+        ]
+      },
+      "release_body": "ZTC 0.12.0-beta.1 (preview).\n\nBuilt from immutable Epoch-ML/zerg source commit `1234567890abcdef1234567890abcdef12345678`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.\n\nWhat's new:\n- Panes keep the name you give them.\n- Resumed sessions draw at once.\n\nAll changes:\n- A renamed pane keeps its name in the desktop app.\n- Session resume no longer spends seconds before drawing.\n- ztc update installs a release published minutes earlier.",
+      "latest": {
+        "notes": "• Panes keep the name you give them.\n• Resumed sessions draw at once.",
+        "changes": [
+          "A renamed pane keeps its name in the desktop app.",
+          "Session resume no longer spends seconds before drawing.",
+          "ztc update installs a release published minutes earlier."
+        ]
+      }
+    },
+    {
+      "name": "highlights without changes: no All changes section and no changes key",
+      "request": {
+        "schema_version": 1,
+        "product": "ZTC",
+        "channel": "preview",
+        "version": "0.12.0-beta.2",
+        "release_tag": "ztc-desktop-preview-v0.12.0-beta.2",
+        "source_repository": "Epoch-ML/zerg",
+        "source_sha": "abcdefabcdefabcdefabcdefabcdefabcdefabcd",
+        "source_ref": "refs/tags/ztc-desktop-preview-v0.12.0-beta.2",
+        "requested_at": "2026-11-12T18:00:00.000Z",
+        "npm": {
+          "name": "@zergai/ztc",
+          "version": "0.12.0-beta.2",
+          "integrity": "sha512-AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg==",
+          "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.12.0-beta.2.tgz"
+        },
+        "whats_new": [
+          "Fixes and improvements."
+        ],
+        "changes": []
+      },
+      "release_body": "ZTC 0.12.0-beta.2 (preview).\n\nBuilt from immutable Epoch-ML/zerg source commit `abcdefabcdefabcdefabcdefabcdefabcdefabcd`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.\n\nWhat's new:\n- Fixes and improvements.",
+      "latest": {
+        "notes": "• Fixes and improvements."
+      }
+    },
+    {
+      "name": "a stable release",
+      "request": {
+        "schema_version": 1,
+        "product": "ZTC",
+        "channel": "stable",
+        "version": "1.0.0",
+        "release_tag": "ztc-desktop-v1.0.0",
+        "source_repository": "Epoch-ML/zerg",
+        "source_sha": "0000000000000000000000000000000000000001",
+        "source_ref": "refs/tags/ztc-desktop-v1.0.0",
+        "requested_at": "2026-11-12T18:00:00.000Z",
+        "npm": {
+          "name": "@zergai/ztc",
+          "version": "1.0.0",
+          "integrity": "sha512-AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw==",
+          "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-1.0.0.tgz"
+        },
+        "whats_new": [
+          "ZTC 1.0 is here."
+        ],
+        "changes": [
+          "The desktop app updates itself from the stable channel."
+        ]
+      },
+      "release_body": "ZTC 1.0.0 (stable).\n\nBuilt from immutable Epoch-ML/zerg source commit `0000000000000000000000000000000000000001`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.\n\nWhat's new:\n- ZTC 1.0 is here.\n\nAll changes:\n- The desktop app updates itself from the stable channel.",
+      "latest": {
+        "notes": "• ZTC 1.0 is here.",
+        "changes": [
+          "The desktop app updates itself from the stable channel."
+        ]
+      }
+    },
+    {
+      "name": "Unicode, joiners, quotes and backslashes",
+      "request": {
+        "schema_version": 1,
+        "product": "ZTC",
+        "channel": "preview",
+        "version": "0.12.0-beta.3",
+        "release_tag": "ztc-desktop-preview-v0.12.0-beta.3",
+        "source_repository": "Epoch-ML/zerg",
+        "source_sha": "fedcba9876543210fedcba9876543210fedcba98",
+        "source_ref": "refs/tags/ztc-desktop-preview-v0.12.0-beta.3",
+        "requested_at": "2026-11-12T18:00:00.000Z",
+        "npm": {
+          "name": "@zergai/ztc",
+          "version": "0.12.0-beta.3",
+          "integrity": "sha512-BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBA==",
+          "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.12.0-beta.3.tgz"
+        },
+        "whats_new": [
+          "Emoji with a joiner 👩‍💻 and flags 🏳️‍🌈 work.",
+          "Persian text keeps its non-joiner: نیم‌فاصله.",
+          "日本語のメニューが表示されます。",
+          "Café menus show naïve “smart quotes” — and a < b."
+        ],
+        "changes": [
+          "Backslash \\ and \"quotes\" survive.",
+          "Ellipsis is one character…",
+          "Paths like ~/.ztc/config.json and #123 stay plain."
+        ]
+      },
+      "release_body": "ZTC 0.12.0-beta.3 (preview).\n\nBuilt from immutable Epoch-ML/zerg source commit `fedcba9876543210fedcba9876543210fedcba98`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.\n\nWhat's new:\n- Emoji with a joiner 👩‍💻 and flags 🏳️‍🌈 work.\n- Persian text keeps its non-joiner: نیم‌فاصله.\n- 日本語のメニューが表示されます。\n- Café menus show naïve “smart quotes” — and a < b.\n\nAll changes:\n- Backslash \\ and \"quotes\" survive.\n- Ellipsis is one character…\n- Paths like ~/.ztc/config.json and #123 stay plain.",
+      "latest": {
+        "notes": "• Emoji with a joiner 👩‍💻 and flags 🏳️‍🌈 work.\n• Persian text keeps its non-joiner: نیم‌فاصله.\n• 日本語のメニューが表示されます。\n• Café menus show naïve “smart quotes” — and a < b.",
+        "changes": [
+          "Backslash \\ and \"quotes\" survive.",
+          "Ellipsis is one character…",
+          "Paths like ~/.ztc/config.json and #123 stay plain."
+        ]
+      }
+    },
+    {
+      "name": "four highlights and forty changes",
+      "request": {
+        "schema_version": 1,
+        "product": "ZTC",
+        "channel": "preview",
+        "version": "0.12.0-beta.4",
+        "release_tag": "ztc-desktop-preview-v0.12.0-beta.4",
+        "source_repository": "Epoch-ML/zerg",
+        "source_sha": "1111111111111111111111111111111111111111",
+        "source_ref": "refs/tags/ztc-desktop-preview-v0.12.0-beta.4",
+        "requested_at": "2026-11-12T18:00:00.000Z",
+        "npm": {
+          "name": "@zergai/ztc",
+          "version": "0.12.0-beta.4",
+          "integrity": "sha512-BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ==",
+          "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.12.0-beta.4.tgz"
+        },
+        "whats_new": [
+          "One.",
+          "Two.",
+          "Three.",
+          "Four."
+        ],
+        "changes": [
+          "Change 1.",
+          "Change 2.",
+          "Change 3.",
+          "Change 4.",
+          "Change 5.",
+          "Change 6.",
+          "Change 7.",
+          "Change 8.",
+          "Change 9.",
+          "Change 10.",
+          "Change 11.",
+          "Change 12.",
+          "Change 13.",
+          "Change 14.",
+          "Change 15.",
+          "Change 16.",
+          "Change 17.",
+          "Change 18.",
+          "Change 19.",
+          "Change 20.",
+          "Change 21.",
+          "Change 22.",
+          "Change 23.",
+          "Change 24.",
+          "Change 25.",
+          "Change 26.",
+          "Change 27.",
+          "Change 28.",
+          "Change 29.",
+          "Change 30.",
+          "Change 31.",
+          "Change 32.",
+          "Change 33.",
+          "Change 34.",
+          "Change 35.",
+          "Change 36.",
+          "Change 37.",
+          "Change 38.",
+          "Change 39.",
+          "Change 40."
+        ]
+      },
+      "release_body": "ZTC 0.12.0-beta.4 (preview).\n\nBuilt from immutable Epoch-ML/zerg source commit `1111111111111111111111111111111111111111`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.\n\nWhat's new:\n- One.\n- Two.\n- Three.\n- Four.\n\nAll changes:\n- Change 1.\n- Change 2.\n- Change 3.\n- Change 4.\n- Change 5.\n- Change 6.\n- Change 7.\n- Change 8.\n- Change 9.\n- Change 10.\n- Change 11.\n- Change 12.\n- Change 13.\n- Change 14.\n- Change 15.\n- Change 16.\n- Change 17.\n- Change 18.\n- Change 19.\n- Change 20.\n- Change 21.\n- Change 22.\n- Change 23.\n- Change 24.\n- Change 25.\n- Change 26.\n- Change 27.\n- Change 28.\n- Change 29.\n- Change 30.\n- Change 31.\n- Change 32.\n- Change 33.\n- Change 34.\n- Change 35.\n- Change 36.\n- Change 37.\n- Change 38.\n- Change 39.\n- Change 40.",
+      "latest": {
+        "notes": "• One.\n• Two.\n• Three.\n• Four.",
+        "changes": [
+          "Change 1.",
+          "Change 2.",
+          "Change 3.",
+          "Change 4.",
+          "Change 5.",
+          "Change 6.",
+          "Change 7.",
+          "Change 8.",
+          "Change 9.",
+          "Change 10.",
+          "Change 11.",
+          "Change 12.",
+          "Change 13.",
+          "Change 14.",
+          "Change 15.",
+          "Change 16.",
+          "Change 17.",
+          "Change 18.",
+          "Change 19.",
+          "Change 20.",
+          "Change 21.",
+          "Change 22.",
+          "Change 23.",
+          "Change 24.",
+          "Change 25.",
+          "Change 26.",
+          "Change 27.",
+          "Change 28.",
+          "Change 29.",
+          "Change 30.",
+          "Change 31.",
+          "Change 32.",
+          "Change 33.",
+          "Change 34.",
+          "Change 35.",
+          "Change 36.",
+          "Change 37.",
+          "Change 38.",
+          "Change 39.",
+          "Change 40."
+        ]
+      }
+    }
+  ]
+}
