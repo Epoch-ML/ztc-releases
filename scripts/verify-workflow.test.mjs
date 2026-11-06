@@ -11,6 +11,7 @@ import test from "node:test";
 const execFileAsync = promisify(execFile);
 const SCRIPTS = fileURLToPath(new URL(".", import.meta.url));
 const workflow = await readFile(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8");
+const releaseWorkflow = await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
 const STEP_NAME = "Bind each request a pull request adds to its npm package";
 const TAG = "ztc-desktop-preview-v0.12.0-beta.1";
 const REQUEST_PATH = `requests/${TAG}.json`;
@@ -23,13 +24,13 @@ const NOTES = {
 const NOTES_RELEASE = { whatsNew: NOTES.whats_new, changes: NOTES.changes };
 
 // The workflow's own step text, as bash runs it on the runner.
-function stepScript(name) {
-  const start = workflow.indexOf(`- name: ${name}\n`);
-  assert.ok(start >= 0, `verify.yml must have the step "${name}"`);
-  const runAt = workflow.indexOf("        run: |\n", start);
+function stepScript(name, text = workflow, file = "verify.yml") {
+  const start = text.indexOf(`- name: ${name}\n`);
+  assert.ok(start >= 0, `${file} must have the step "${name}"`);
+  const runAt = text.indexOf("        run: |\n", start);
   assert.ok(runAt > start, `"${name}" must run a script`);
   const lines = [];
-  for (const line of workflow.slice(runAt + "        run: |\n".length).split("\n")) {
+  for (const line of text.slice(runAt + "        run: |\n".length).split("\n")) {
     if (line !== "" && !line.startsWith("          ")) break;
     lines.push(line.slice(10));
   }
@@ -247,4 +248,57 @@ test("verify.yml fails closed without the pull request's base commit", async (t)
 test("verify.yml binds requests on pull requests, with the base commit fetched", () => {
   assert.match(stepHeader(STEP_NAME), /\n        if: github\.event_name == 'pull_request'\n/);
   assert.match(workflow, /- uses: actions\/checkout@[0-9a-f]{40} # v7\n        with:\n          fetch-depth: 2\n/);
+});
+
+const RELEASE_STEP = "Bind the request to the exact npm package before building";
+
+// The build job's layout: the release index checkout and the npm tarball the
+// previous step downloaded into RUNNER_TEMP.
+async function runReleaseBinding(t, { zergRelease = NOTES_RELEASE, request }) {
+  const root = await mkdtemp(join(tmpdir(), "ztc-release-binding-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const { tarball, integrity } = await npmPackage(root, zergRelease);
+  const index = join(root, "release-index");
+  await mkdir(join(index, "scripts"), { recursive: true });
+  await mkdir(join(index, "requests"));
+  for (const script of ["release-request.mjs", "public-release.mjs"]) {
+    await copyFile(join(SCRIPTS, script), join(index, "scripts", script));
+  }
+  await writeFile(join(index, REQUEST_PATH), request(identity(integrity)));
+  const runner = join(root, "runner");
+  await mkdir(runner);
+  await copyFile(tarball, join(runner, "ztc-npm.tgz"));
+  const script = stepScript(RELEASE_STEP, releaseWorkflow, "release.yml");
+  const result = spawnSync("bash", ["-c", `set -euo pipefail\n${script}`], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, RUNNER_TEMP: runner, ZTERM_RELEASE_TAG: TAG },
+  });
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+}
+
+test("release.yml refuses a request that does not carry its npm package's notes before building", async (t) => {
+  const bound = await runReleaseBinding(t, { request: (request) => canonical({ ...request, ...NOTES }) });
+  assert.equal(bound.status, 0, bound.stderr);
+  const legacy = await runReleaseBinding(t, { zergRelease: {}, request: (request) => canonical(request) });
+  assert.equal(legacy.status, 0, legacy.stderr);
+
+  const refusal = `::error::release-index/${REQUEST_PATH} must be exactly what release-request.mjs writes from the npm package`;
+  const typed = await runReleaseBinding(t, {
+    request: (request) => canonical({ ...request, whats_new: ["Typed by hand."], changes: NOTES.changes }),
+  });
+  assert.equal(typed.status, 1);
+  assert.match(typed.stderr, /the request's what's-new notes do not match the npm package's zergRelease/);
+  assert.ok(typed.stdout.startsWith(refusal), typed.stdout);
+  const dropped = await runReleaseBinding(t, { request: (request) => canonical(request) });
+  assert.equal(dropped.status, 1);
+  assert.ok(dropped.stdout.startsWith(refusal), dropped.stdout);
+});
+
+test("release.yml binds the request right after downloading the npm package, before the Rust build", () => {
+  const download = releaseWorkflow.indexOf("- name: Download pinned bundled Node and exact published agent\n");
+  const bind = releaseWorkflow.indexOf(`- name: ${RELEASE_STEP}\n`);
+  const rust = releaseWorkflow.indexOf("- name: Install pinned Rust toolchain\n");
+  assert.ok(download > 0 && rust > download, "the build job downloads npm, then installs Rust");
+  assert.ok(bind > download && bind < rust, "the binding runs between the npm download and the Rust build");
 });
