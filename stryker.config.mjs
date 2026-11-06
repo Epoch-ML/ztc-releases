@@ -1,7 +1,7 @@
 export default {
   mutate: [
-    "scripts/release-request.mjs:21-216",
-    "scripts/release-request.mjs:241-347",
+    "scripts/release-request.mjs:21-255",
+    "scripts/release-request.mjs:280-386",
     "scripts/release-notes.mjs",
     "scripts/feed-policy.mjs:14-125",
     "scripts/release-asset-url.mjs:12-83",
@@ -14,6 +14,7 @@ export default {
       "scripts/feed-policy.test.mjs",
       "scripts/release-asset-url.test.mjs",
       "scripts/release-request.test.mjs",
+      "scripts/release-notes-rules.test.mjs",
       "scripts/release-notes.test.mjs",
       "scripts/verify-release-payload.test.mjs",
       "scripts/deploy-pages.test.mjs",
