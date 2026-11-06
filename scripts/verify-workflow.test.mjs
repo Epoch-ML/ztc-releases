@@ -236,6 +236,28 @@ test("verify.yml downloads nothing for a pull request without a request, or an i
   assert.equal(elsewhere.fetched, "");
 });
 
+test("verify.yml refuses a request not named for its release tag, without echoing the name", async (t) => {
+  // release.yml dispatches only requests/<release_tag>.json; another name
+  // would be merged and immutable, and never released.
+  const misnamed = await runBinding(t, {
+    head: (request) => ({ "requests/copy.json": canonical({ ...request, ...NOTES }) }),
+  });
+  assert.equal(misnamed.status, 1);
+  assert.ok(
+    misnamed.stdout.includes(`::error::the request for ${TAG} must be ${REQUEST_PATH}`),
+    misnamed.stdout,
+  );
+  assert.equal(misnamed.fetched, "");
+
+  // A file name is never written into a workflow command.
+  const injected = await runBinding(t, {
+    head: (request) => ({ "requests/x\n::warning::injected.json": canonical({ ...request, ...NOTES }) }),
+  });
+  assert.equal(injected.status, 1);
+  assert.doesNotMatch(injected.stdout, /^::warning::/m);
+  assert.equal(injected.fetched, "");
+});
+
 test("verify.yml fails closed without the pull request's base commit", async (t) => {
   const run = await runBinding(t, {
     singleCommit: true,
