@@ -22,23 +22,44 @@ const EXPECTED_FIELDS = [
 const NOTE_FIELDS = ["whats_new", "changes"];
 // Holds the longest notes the limits below allow (about 51 KB of UTF-8).
 const MAX_REQUEST_BYTES = 64 * 1024;
-const WHATS_NEW_LIMITS = { minimum: 1, maximum: 4, characters: 140 };
-const CHANGES_LIMITS = { minimum: 0, maximum: 40, characters: 300 };
 const MAX_NPM_TARBALL_BYTES = 256 * 1024 * 1024;
 const MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
 const SEMVER_PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SOURCE_SHA_PATTERN = /^[0-9a-f]{40}$/;
-// Controls (tabs and line breaks too), format characters such as bidi
-// overrides and zero-width marks, line and paragraph separators, lone
-// surrogates and private-use characters.
-const UNSAFE_CHARACTER = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}\p{Cs}\p{Co}]/u;
-// Code spans, emphasis and HTML tags render differently on GitHub than as the
-// plain text the app shows.
-const MARKUP = /[`*]|<[A-Za-z/!?]/;
+
+// The release-note rules, rules_version 1 of fixtures/release-notes-fixture.json.
+// The lane (Epoch-ML/zerg) enforces the same rules with validateReleaseNotes
+// before npm publish, and both repositories run every case of that file, so an
+// npm version can never carry notes this publisher refuses.
+const WHATS_NEW_LIMITS = { minimum: 1, maximum: 4, codePoints: 140 };
+const CHANGES_LIMITS = { minimum: 0, maximum: 40, codePoints: 300 };
+// Controls (tabs and line breaks too), lone surrogates, private-use characters,
+// line and paragraph separators, and format characters such as bidi overrides,
+// zero-width spaces, soft hyphens and byte order marks. U+200C and U+200D stay:
+// emoji sequences and Persian or Indic text need them.
+const FORBIDDEN_CHARACTER =
+  /[\p{Cc}\p{Cs}\p{Co}\p{Zl}\p{Zp}]|(?![\u200c\u200d])\p{Cf}/u;
+const CHARACTER_KINDS = [
+  [/\p{Cc}/u, "a control character"],
+  [/\p{Cf}/u, "a format character"],
+  [/\p{Zl}/u, "a line separator"],
+  [/\p{Zp}/u, "a paragraph separator"],
+  [/\p{Cs}/u, "a lone surrogate"],
+  [/\p{Co}/u, "a private-use character"],
+];
+// Markup that renders, notifies or hides text on a GitHub Release page, which
+// installed apps show literally.
+const FORBIDDEN_MARKUP = [
+  [/`/, "a backtick"],
+  [/\*/, "an asterisk"],
+  [/<[A-Za-z/!?]/, "an HTML tag, comment or declaration"],
+  [/\]\(/, "a Markdown link"],
+  [/(?:^|[^A-Za-z0-9_])@[A-Za-z0-9-]/, "an @mention"],
+];
 // A leading marker would nest inside the release body's "- entry" lines or
 // repeat the app's "• " bullet.
-const BLOCK_MARKER = /^(?:[-+•] |#{1,6} |>)/;
+const LEADING_MARKER = /^(?:[-+•*] |#{1,6} |>|\d{1,9}[.)] )/;
 
 export class ReleaseRequestError extends Error {
   constructor(message) {
@@ -54,11 +75,17 @@ function requireString(value, field) {
   return value;
 }
 
-function validateEntry(value, description, characters) {
+function codePointName(character) {
+  const hex = character.codePointAt(0).toString(16).toUpperCase();
+  return `U+${hex.padStart(4, "0")}`;
+}
+
+function validateEntry(value, description, codePoints) {
   const entry = requireString(value, description);
-  if ([...entry].length > characters) {
+  const length = [...entry].length;
+  if (length > codePoints) {
     throw new ReleaseRequestError(
-      `${description} must be at most ${characters} characters`,
+      `${description} must be at most ${codePoints} code points (has ${length})`,
     );
   }
   if (entry.trim() !== entry) {
@@ -66,17 +93,19 @@ function validateEntry(value, description, characters) {
       `${description} must not begin or end with whitespace`,
     );
   }
-  if (UNSAFE_CHARACTER.test(entry)) {
+  const character = FORBIDDEN_CHARACTER.exec(entry)?.[0];
+  if (character !== undefined) {
+    const [, kind] = CHARACTER_KINDS.find(([pattern]) => pattern.test(character));
     throw new ReleaseRequestError(
-      `${description} must be one line of plain text without control, format or separator characters`,
+      `${description} must not contain ${kind} (${codePointName(character)})`,
     );
   }
-  if (MARKUP.test(entry)) {
-    throw new ReleaseRequestError(
-      `${description} must be plain text without Markdown or HTML markup`,
-    );
+  for (const [pattern, markup] of FORBIDDEN_MARKUP) {
+    if (pattern.test(entry)) {
+      throw new ReleaseRequestError(`${description} must not contain ${markup}`);
+    }
   }
-  if (BLOCK_MARKER.test(entry)) {
+  if (LEADING_MARKER.test(entry)) {
     throw new ReleaseRequestError(
       `${description} must not begin with a list, heading or quote marker`,
     );
@@ -94,21 +123,31 @@ function validateEntries(value, description, limits) {
     );
   }
   return value.map((entry, index) =>
-    validateEntry(entry, `${description}[${index}]`, limits.characters),
+    validateEntry(entry, `${description}[${index}]`, limits.codePoints),
   );
 }
 
-// whats_new: 1-4 entries of at most 140 characters; changes: 0-40 entries of
-// at most 300. Each entry is one line of plain text; nothing is rewritten.
-export function validateReleaseNotes(
-  whatsNew,
-  changes,
-  names = { whatsNew: "whats_new", changes: "changes" },
-) {
+function checkReleaseNotes(whatsNew, changes, names) {
   return {
     whats_new: validateEntries(whatsNew, names.whatsNew, WHATS_NEW_LIMITS),
     changes: validateEntries(changes, names.changes, CHANGES_LIMITS),
   };
+}
+
+// The lane's check before npm publish, and every request's: whats_new holds
+// 1-4 entries of 1-140 code points, changes 0-40 entries of 1-300, each one
+// line of plain text under the rules above. Returns the notes unchanged; a
+// refusal names the entry ("whats_new[1]") and the rule it breaks.
+export function validateReleaseNotes(notes) {
+  if (notes === null || typeof notes !== "object" || Array.isArray(notes)) {
+    throw new ReleaseRequestError(
+      "release notes must be an object with whats_new and changes",
+    );
+  }
+  return checkReleaseNotes(notes.whats_new, notes.changes, {
+    whatsNew: "whats_new",
+    changes: "changes",
+  });
 }
 
 export function expectedReleaseTag(channel, version) {
@@ -211,7 +250,7 @@ export function validateReleaseRequest(request) {
   }
   return {
     ...canonical,
-    ...validateReleaseNotes(request.whats_new, request.changes),
+    ...validateReleaseNotes(request),
   };
 }
 
@@ -262,7 +301,7 @@ export function releaseNotesFromPackage(pkg, request) {
       "npm package zergRelease must carry whatsNew and changes together",
     );
   }
-  return validateReleaseNotes(release.whatsNew, release.changes, {
+  return checkReleaseNotes(release.whatsNew, release.changes, {
     whatsNew: "zergRelease.whatsNew",
     changes: "zergRelease.changes",
   });
@@ -360,7 +399,11 @@ async function main() {
   process.stdout.write(`${JSON.stringify(request, null, 2)}\n`);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Importing this module (the lane does, even from `node -e`) never runs main.
+if (
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main().catch((error) => {
     console.error(`release-request: ${error.message}`);
     process.exitCode = 1;

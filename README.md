@@ -52,9 +52,9 @@ GitHub Release paths in this repository; no external artifact hosts are accepted
 ## What's new in a release
 
 Release text comes only from pinned inputs. The npm package carries
-`zergRelease.whatsNew` (1-4 entries of at most 140 characters) and
-`zergRelease.changes` (0-40 entries of at most 300), stamped at its source
-commit. Copy them into the request before the request PR:
+`zergRelease.whatsNew` (1-4 entries of 1-140 code points) and
+`zergRelease.changes` (0-40 entries of 1-300 code points), stamped at its
+source commit. Copy them into the request before the request PR:
 
 ```sh
 node scripts/release-request.mjs request.json ztc-<version>.tgz > requests/<tag>.json
@@ -62,10 +62,32 @@ node scripts/release-request.mjs request.json ztc-<version>.tgz > requests/<tag>
 
 This checks the tarball against the request's SHA-512 integrity, npm name and
 version, and `zergRelease.sourceCommit` against `source_sha`, then prints the
-canonical request with the notes as `whats_new` and `changes`. Each entry must
-be one line of plain text: no leading or trailing whitespace; no control,
-format or separator characters; no backticks, asterisks or HTML tags; and no
-leading `- `, `+ `, `• `, `#` heading or `>` quote marker.
+canonical request with the notes as `whats_new` and `changes`.
+
+One set of release-note rules applies here and in the lane that publishes the
+npm package (`Epoch-ML/zerg`). Both repositories carry
+`scripts/fixtures/release-notes-fixture.json` byte for byte and run every
+accept, reject and list case in it; change the rules only by changing that file
+in both. Each entry is one line of plain text equal to its own `trim()`. It
+must not contain:
+
+- a `\p{Cc}`, `\p{Cs}`, `\p{Co}`, `\p{Zl}` or `\p{Zp}` character, or a
+  `\p{Cf}` character other than U+200C and U+200D, which emoji sequences and
+  Persian or Indic text need;
+- a backtick or an asterisk anywhere, `<` followed by a letter (A-Z, a-z),
+  `/`, `!` or `?`, the sequence `](`, or an @mention matching
+  `(^|[^A-Za-z0-9_])@[A-Za-z0-9-]` (an e-mail address such as `a@b.com` is
+  fine).
+
+Nor may it begin with a list, heading or quote marker:
+`^(?:[-+•*] |#{1,6} |>|\d{1,9}[.)] )`.
+
+The lane checks its computed notes with
+`validateReleaseNotes({ whats_new, changes })`, exported by
+`scripts/release-request.mjs`, before `npm publish`, so no npm version
+carries notes this publisher refuses. It returns the notes unchanged or throws a
+`ReleaseRequestError` that names the entry and the rule, for example
+`whats_new[1] must not contain an @mention`.
 
 Every workflow step that writes or compares release text applies
 `scripts/release-notes.jq` to that request; nothing is typed at publish time.
