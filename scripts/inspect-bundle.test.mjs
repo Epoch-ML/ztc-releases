@@ -117,3 +117,108 @@ test("bundle inspection rejects a manifest claiming a different source than the 
     await rm(f.root, { recursive: true, force: true });
   }
 });
+
+function message(expected) {
+  return (error) => {
+    assert.equal(error.message, expected);
+    return true;
+  };
+}
+
+const WHATS_NEW = ["Panes keep the name you give them.", "Resumed sessions draw at once."];
+const CHANGES = ["A renamed pane keeps its name in the desktop app."];
+
+async function stampPackage(app, release) {
+  await writeFile(
+    join(app, "Contents/Resources/runtime/ztc/package.json"),
+    JSON.stringify({
+      name: "@zergai/ztc",
+      version: "0.4.0-beta.2",
+      zergRelease: { sourceCommit: "a".repeat(40), ...release },
+    }),
+  );
+}
+
+async function writeRequest(root, fields = {}) {
+  const path = join(root, "request.json");
+  await writeFile(
+    path,
+    JSON.stringify({
+      schema_version: 1,
+      product: "ZTC",
+      channel: "preview",
+      version: "0.4.0-beta.2",
+      release_tag: "ztc-desktop-preview-v0.4.0-beta.2",
+      source_repository: "Epoch-ML/zerg",
+      source_sha: "a".repeat(40),
+      source_ref: "refs/tags/ztc-desktop-preview-v0.4.0-beta.2",
+      requested_at: "2026-11-05T22:12:46.000Z",
+      npm: {
+        name: "@zergai/ztc",
+        version: "0.4.0-beta.2",
+        integrity: `sha512-${Buffer.alloc(64).toString("base64")}`,
+        tarballUrl: "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.4.0-beta.2.tgz",
+      },
+      ...fields,
+    }),
+  );
+  return path;
+}
+
+test("bundle inspection binds the packaged agent's what's-new notes to the release request", async () => {
+  const f = await fixture();
+  try {
+    await stampPackage(f.app, { whatsNew: WHATS_NEW, changes: CHANGES });
+    const matching = await writeRequest(f.root, { whats_new: WHATS_NEW, changes: CHANGES });
+    const result = await inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), matching);
+    assert.equal(result.npmVersion, "0.4.0-beta.2");
+
+    for (const fields of [
+      { whats_new: ["Typed by hand."], changes: CHANGES },
+      { whats_new: WHATS_NEW, changes: [] },
+      {},
+    ]) {
+      const request = await writeRequest(f.root, fields);
+      await assert.rejects(
+        inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), request),
+        message("the request's what's-new notes do not match the npm package's zergRelease"),
+      );
+    }
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("bundle inspection keeps releases without notes valid only against requests without notes", async () => {
+  const f = await fixture();
+  try {
+    const legacy = await writeRequest(f.root);
+    const result = await inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), legacy);
+    assert.equal(result.runtime.release_version, "0.4.0-beta.2");
+
+    const noted = await writeRequest(f.root, { whats_new: WHATS_NEW, changes: CHANGES });
+    await assert.rejects(
+      inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), noted),
+      message("the request's what's-new notes do not match the npm package's zergRelease"),
+    );
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("bundle inspection refuses a request for another release than the bundle", async () => {
+  const f = await fixture();
+  try {
+    const other = await writeRequest(f.root, {
+      version: "0.4.0-beta.3",
+      release_tag: "ztc-desktop-preview-v0.4.0-beta.3",
+      source_ref: "refs/tags/ztc-desktop-preview-v0.4.0-beta.3",
+    });
+    await assert.rejects(
+      inspectBundle(f.app, "0.4.0-beta.2", "a".repeat(40), other),
+      message("release request does not match the bundle's release version and source"),
+    );
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});

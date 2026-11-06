@@ -44,6 +44,27 @@ const REQUEST = {
   },
 };
 
+const LEGACY_BODY =
+  "ZTC 1.2.3-preview.4 (preview).\n\nBuilt from immutable Epoch-ML/zerg source commit `0123456789abcdef0123456789abcdef01234567`.\n\nThe updater archive is signed independently from the macOS application signature.\n\nBridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.";
+const NOTED_REQUEST = {
+  ...REQUEST,
+  whats_new: ["Panes keep the name you give them.", "Resumed sessions draw at once."],
+  changes: [
+    "A renamed pane keeps its name in the desktop app.",
+    "Session resume no longer spends seconds before drawing.",
+    "ztc update installs a release published minutes earlier.",
+  ],
+};
+const NOTED_TEXT = {
+  notes: "• Panes keep the name you give them.\n• Resumed sessions draw at once.",
+  changes: [
+    "A renamed pane keeps its name in the desktop app.",
+    "Session resume no longer spends seconds before drawing.",
+    "ztc update installs a release published minutes earlier.",
+  ],
+  body: `${LEGACY_BODY}\n\nWhat's new:\n- Panes keep the name you give them.\n- Resumed sessions draw at once.\n\nAll changes:\n- A renamed pane keeps its name in the desktop app.\n- Session resume no longer spends seconds before drawing.\n- ztc update installs a release published minutes earlier.`,
+};
+
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -130,7 +151,7 @@ async function expectPayloadError(
   );
 }
 
-async function makeFixture(t, request = REQUEST) {
+async function makeFixture(t, request = REQUEST, text = {}) {
   if (request.channel === "stable")
     request = {
       ...request,
@@ -200,7 +221,10 @@ async function makeFixture(t, request = REQUEST) {
         schema_version: 1,
         product: "ZTC",
         version: request.version,
-        notes: `ZTC ${request.channel} release from source ${request.source_sha}.`,
+        notes:
+          text.notes ??
+          `ZTC ${request.channel} release from source ${request.source_sha}.`,
+        ...(text.changes === undefined ? {} : { changes: text.changes }),
         pub_date: request.requested_at,
         platforms: {
           "darwin-aarch64": {
@@ -278,12 +302,14 @@ async function makeFixture(t, request = REQUEST) {
         id: 42,
         tag_name: request.release_tag,
         name: `ZTC ${request.version} (${request.channel})`,
-        body: [
-          `ZTC ${request.version} (${request.channel}).`,
-          `Built from immutable Epoch-ML/zerg source commit \`${request.source_sha}\`.`,
-          "The updater archive is signed independently from the macOS application signature.",
-          "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
-        ].join("\n\n"),
+        body:
+          text.body ??
+          [
+            `ZTC ${request.version} (${request.channel}).`,
+            `Built from immutable Epoch-ML/zerg source commit \`${request.source_sha}\`.`,
+            "The updater archive is signed independently from the macOS application signature.",
+            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
+          ].join("\n\n"),
         draft: false,
         prerelease: request.channel === "preview",
         immutable: true,
@@ -953,4 +979,121 @@ test("release notice separates updater support from public feed activation", asy
     (error) => error instanceof ReleasePayloadError &&
       error.message === "GitHub release body does not match the immutable release request",
   );
+});
+
+test("verifies a release whose request carries what's-new notes", async (t) => {
+  const fixture = await makeFixture(t, NOTED_REQUEST, NOTED_TEXT);
+  const verified = await verifyReleasePayload({ ...fixture, repository: REPOSITORY });
+  assert.equal(verified.releaseTag, NOTED_REQUEST.release_tag);
+  assert.equal(verified.releaseId, 42);
+});
+
+test("a noted release without changes carries neither a changes key nor an All changes section", async (t) => {
+  const request = { ...NOTED_REQUEST, changes: [] };
+  const text = {
+    notes: NOTED_TEXT.notes,
+    body: `${LEGACY_BODY}\n\nWhat's new:\n- Panes keep the name you give them.\n- Resumed sessions draw at once.`,
+  };
+  {
+    const fixture = await makeFixture(t, request, text);
+    const verified = await verifyReleasePayload({ ...fixture, repository: REPOSITORY });
+    assert.equal(verified.releaseTag, request.release_tag);
+  }
+  {
+    const fixture = await makeFixture(t, request, { ...text, changes: [] });
+    await expectPayloadError(
+      fixture,
+      /^latest\.json must contain exactly: notes, platforms, product, pub_date, schema_version, version$/,
+    );
+  }
+  {
+    const fixture = await makeFixture(t, request, {
+      ...text,
+      body: `${text.body}\n\nAll changes:`,
+    });
+    await expectPayloadError(
+      fixture,
+      /^GitHub release body does not match the immutable release request$/,
+    );
+  }
+});
+
+test("rejects updater notes and changes that drift from the request's notes", async (t) => {
+  const cases = [
+    [
+      (latest) => (latest.notes = `ZTC preview release from source ${REQUEST.source_sha}.`),
+      /^latest\.json notes does not match the immutable release request$/,
+    ],
+    [
+      (latest) => (latest.notes = "- Panes keep the name you give them.\n- Resumed sessions draw at once."),
+      /^latest\.json notes does not match the immutable release request$/,
+    ],
+    [
+      (latest) => (latest.notes = `${NOTED_TEXT.notes}\n`),
+      /^latest\.json notes does not match the immutable release request$/,
+    ],
+    [
+      (latest) => delete latest.changes,
+      /^latest\.json must contain exactly: changes, notes, platforms, product, pub_date, schema_version, version$/,
+    ],
+    [
+      (latest) => latest.changes.reverse(),
+      /^latest\.json changes does not match the immutable release request$/,
+    ],
+    [
+      (latest) => latest.changes.push("An entry no request lists."),
+      /^latest\.json changes does not match the immutable release request$/,
+    ],
+    [
+      (latest) => (latest.changes = latest.changes.join("\n")),
+      /^latest\.json changes does not match the immutable release request$/,
+    ],
+  ];
+  for (const [mutate, expected] of cases) {
+    const fixture = await makeFixture(t, NOTED_REQUEST, NOTED_TEXT);
+    await mutateJsonAsset(fixture, "latest.json", mutate);
+    await expectPayloadError(fixture, expected);
+  }
+});
+
+test("rejects a release body that drifts from the request's notes", async (t) => {
+  for (const body of [
+    LEGACY_BODY,
+    NOTED_TEXT.body.slice(0, NOTED_TEXT.body.indexOf("\n\nAll changes:")),
+    NOTED_TEXT.body.replace("What's new:", "What's new"),
+    NOTED_TEXT.body.replace("- Panes keep", "• Panes keep"),
+    `${NOTED_TEXT.body}\n`,
+  ]) {
+    const fixture = await makeFixture(t, NOTED_REQUEST, { ...NOTED_TEXT, body });
+    await expectPayloadError(
+      fixture,
+      /^GitHub release body does not match the immutable release request$/,
+    );
+  }
+});
+
+test("a release without notes keeps the original updater notes and body only", async (t) => {
+  {
+    const fixture = await makeFixture(t, REQUEST, { changes: ["A change no request lists."] });
+    await expectPayloadError(
+      fixture,
+      /^latest\.json must contain exactly: notes, platforms, product, pub_date, schema_version, version$/,
+    );
+  }
+  {
+    const fixture = await makeFixture(t, REQUEST, {
+      body: `${LEGACY_BODY}\n\nWhat's new:\n- Panes keep the name you give them.`,
+    });
+    await expectPayloadError(
+      fixture,
+      /^GitHub release body does not match the immutable release request$/,
+    );
+  }
+  {
+    const fixture = await makeFixture(t, REQUEST, { notes: NOTED_TEXT.notes });
+    await expectPayloadError(
+      fixture,
+      /^latest\.json notes does not match the immutable release request$/,
+    );
+  }
 });
