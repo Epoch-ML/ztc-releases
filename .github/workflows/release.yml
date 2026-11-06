@@ -453,7 +453,7 @@ jobs:
           python3 scripts/unpack-unsigned.py unsigned-transfer/ztc-unsigned.tar.gz unsigned
           app="$GITHUB_WORKSPACE/unsigned/ztc.app"
           test -d "$app"
-          node scripts/inspect-bundle.mjs "$app" "$RELEASE_VERSION" "$SOURCE_SHA" > "$RUNNER_TEMP/native-payloads.txt"
+          node scripts/inspect-bundle.mjs "$app" "$RELEASE_VERSION" "$SOURCE_SHA" "requests/$RELEASE_TAG.json" > "$RUNNER_TEMP/native-payloads.txt"
           expected_bundle_version="${RELEASE_VERSION%%[-+]*}"
           printf '%s\n' "$expected_bundle_version" \
             | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
@@ -832,18 +832,21 @@ jobs:
                 {name: $dmg_name, sha256: $dmg_sha}
               ]
             }' >payload/release-metadata.json
-          jq -n \
+          # notes and changes come only from the immutable request.
+          jq \
+            -L release-index/scripts \
             --arg archive_sha "$archive_sha" \
             --arg archive_url "$archive_url" \
-            --arg notes "ZTC $RELEASE_CHANNEL release from source $SOURCE_SHA." \
             --arg pub_date "$RELEASE_DATE" \
             --arg signature "$signature" \
             --arg version "$RELEASE_VERSION" \
-            '{
+            'include "release-notes";
+            {
               schema_version: 1,
               product: "ZTC",
               version: $version,
-              notes: $notes,
+              notes: latest_notes
+            } + latest_changes + {
               pub_date: $pub_date,
               platforms: {
                 "darwin-aarch64": {
@@ -852,7 +855,7 @@ jobs:
                   url: $archive_url
                 }
               }
-            }' >payload/latest.json
+            }' "release-index/requests/$RELEASE_TAG.json" >payload/latest.json
 
           tar -xOzf unsigned/ztc.app.tar.gz ztc.app/Contents/Resources/ztc-runtime.json > "$RUNNER_TEMP/ztc-runtime.json"
           node release-index/scripts/build-public-release.mjs "release-index/requests/$RELEASE_TAG.json" "$RUNNER_TEMP/ztc-runtime.json" payload
@@ -992,12 +995,8 @@ jobs:
             fi
           }
           notes="$RUNNER_TEMP/release-notes.md"
-          printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
-            "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
-            "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated." \
-            >"$notes"
+          jq -j -L index/scripts 'include "release-notes"; release_body' \
+            "index/requests/${RELEASE_TAG}.json" >"$notes"
           options=(
             --repo "$GITHUB_REPOSITORY"
             --title "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)"
@@ -1096,12 +1095,8 @@ jobs:
           }
           release_json="$RUNNER_TEMP/release.json"
           notes="$RUNNER_TEMP/expected-release-notes.md"
-          printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
-            "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
-            "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated." \
-            >"$notes"
+          jq -j -L index/scripts 'include "release-notes"; release_body' \
+            "index/requests/${RELEASE_TAG}.json" >"$notes"
           fetch_exact_release "$release_json"
           expected_prerelease=false
           if [[ "$RELEASE_CHANNEL" == "preview" ]]; then
@@ -1353,12 +1348,8 @@ jobs:
           }
           release_json="$RUNNER_TEMP/verified-release.json"
           notes="$RUNNER_TEMP/expected-release-notes.md"
-          printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
-            "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
-            "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated." \
-            >"$notes"
+          jq -j -L index/scripts 'include "release-notes"; release_body' \
+            "index/requests/${RELEASE_TAG}.json" >"$notes"
           fetch_exact_release "$release_json"
           was_draft="$(jq -r .draft "$release_json")"
           expected_prerelease=false
@@ -1586,7 +1577,7 @@ jobs:
           )"
           [[ -z "$unsafe_path" ]]
           [[ -s "$extract_dir/ztc.app/Contents/CodeResources" ]]
-          node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" > /dev/null
+          node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" "index/requests/${RELEASE_TAG}.json" > /dev/null
           app="$extract_dir/ztc.app"
           executable="$app/Contents/MacOS/ZTerm"
           [[ -x "$executable" && -f "$executable" && ! -L "$executable" ]]

@@ -320,12 +320,8 @@ jobs:
           }
           release_json="$RUNNER_TEMP/verified-release.json"
           notes="$RUNNER_TEMP/expected-release-notes.md"
-          printf '%s\n\n%s\n\n%s\n\n%s' \
-            "ZTC $RELEASE_VERSION ($RELEASE_CHANNEL)." \
-            "Built from immutable Epoch-ML/zerg source commit \`$SOURCE_SHA\`." \
-            "The updater archive is signed independently from the macOS application signature." \
-            "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated." \
-            >"$notes"
+          jq -j -L index/scripts 'include "release-notes"; release_body' \
+            "index/requests/${RELEASE_TAG}.json" >"$notes"
           fetch_exact_release "$release_json"
           expected_prerelease=false
           if [[ "$RELEASE_CHANNEL" == "preview" ]]; then
@@ -542,7 +538,7 @@ jobs:
           )"
           [[ -z "$unsafe_path" ]]
           [[ -s "$extract_dir/ztc.app/Contents/CodeResources" ]]
-          node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" > /dev/null
+          node index/scripts/inspect-bundle.mjs "$extract_dir/ztc.app" "$RELEASE_VERSION" "$SOURCE_SHA" "index/requests/${RELEASE_TAG}.json" > /dev/null
           app="$extract_dir/ztc.app"
           executable="$app/Contents/MacOS/ZTerm"
           [[ -x "$executable" && -f "$executable" && ! -L "$executable" ]]

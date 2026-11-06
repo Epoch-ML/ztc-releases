@@ -1,7 +1,14 @@
 import { lstat, readFile, readdir } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-export async function inspectBundle(path, version, sourceSha) {
+import {
+  readReleaseRequest,
+  releaseNotesFromPackage,
+  requireReleaseNotesMatch,
+} from "./release-request.mjs";
+// With requestPath, the packaged agent's what's-new notes (zergRelease, from
+// the integrity-pinned npm artifact) must be exactly the request's notes.
+export async function inspectBundle(path, version, sourceSha, requestPath) {
   const root = resolve(path),
     nativeFiles = [];
   let count = 0,
@@ -67,6 +74,14 @@ export async function inspectBundle(path, version, sourceSha) {
     pkg.zergRelease?.sourceCommit !== sourceSha
   )
     throw new Error("npm artifact/source identity mismatch");
+  if (requestPath !== undefined) {
+    const request = await readReleaseRequest(requestPath);
+    if (request.version !== version || request.source_sha !== sourceSha)
+      throw new Error(
+        "release request does not match the bundle's release version and source",
+      );
+    requireReleaseNotesMatch(request, releaseNotesFromPackage(pkg, request));
+  }
   for (const file of [
     join(root, "Contents/MacOS/ZTerm"),
     join(root, "Contents/Resources/runtime/node"),

@@ -49,6 +49,41 @@ Public channels will be:
 Each also contains `latest.json` for the native updater. URLs are exact immutable
 GitHub Release paths in this repository; no external artifact hosts are accepted.
 
+## What's new in a release
+
+Release text comes only from pinned inputs. The npm package carries
+`zergRelease.whatsNew` (1-4 entries of at most 140 characters) and
+`zergRelease.changes` (0-40 entries of at most 300), stamped at its source
+commit. Copy them into the request before the request PR:
+
+```sh
+node scripts/release-request.mjs request.json ztc-<version>.tgz > requests/<tag>.json
+```
+
+This checks the tarball against the request's SHA-512 integrity, npm name and
+version, and `zergRelease.sourceCommit` against `source_sha`, then prints the
+canonical request with the notes as `whats_new` and `changes`. Each entry must
+be one line of plain text: no leading or trailing whitespace; no control,
+format or separator characters; no backticks, asterisks or HTML tags; and no
+leading `- `, `+ `, `• `, `#` heading or `>` quote marker.
+
+Every workflow step that writes or compares release text applies
+`scripts/release-notes.jq` to that request; nothing is typed at publish time.
+`verify-release-payload.mjs` checks the same rules from
+`scripts/release-notes.mjs`:
+
+- `latest.json` `notes`: one `• entry` line per `whats_new` entry, which
+  installed apps show line by line. `changes`: the change list, present only
+  when it is not empty.
+- GitHub Release body: the fixed paragraphs, then `What's new:` and, when there
+  are changes, `All changes:`, each followed by one `- entry` line per entry.
+
+`inspect-bundle.mjs` requires the signed app's bundled npm `package.json` to
+carry exactly the request's notes. A request without `whats_new` keeps the
+original notes (`ZTC <channel> release from source <sha>.`) and body, so every
+earlier release still verifies and re-activates byte for byte. `schema_version`
+stays 1.
+
 ## Credentials and approvals
 
 Empty main-only environments have been created. Apple and both updater signers
