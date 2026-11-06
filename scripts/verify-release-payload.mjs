@@ -10,6 +10,7 @@ import {
   makeReleaseAssetUrl,
   validateReleaseAssetUrl,
 } from "./release-asset-url.mjs";
+import { latestChanges, latestNotes, releaseBody } from "./release-notes.mjs";
 import { readReleaseRequest } from "./release-request.mjs";
 import { validateZtcPublicRelease } from "./public-release.mjs";
 
@@ -103,15 +104,6 @@ async function sha256File(path) {
   });
 }
 
-function expectedReleaseBody(request) {
-  return [
-    `ZTC ${request.version} (${request.channel}).`,
-    `Built from immutable Epoch-ML/zerg source commit \`${request.source_sha}\`.`,
-    "The updater archive is signed independently from the macOS application signature.",
-    "Bridge notice: ZTC-launched ZTC 0.1.2 sessions cannot complete this transition in-app. Install this release from the signed DMG once. Signed updates with session restoration are supported by this release; availability starts when the update feed is activated.",
-  ].join("\n\n");
-}
-
 function validateCanonicalBase64(value) {
   if (Buffer.from(value, "base64").toString("base64") !== value) {
     fail(`${SIGNATURE_NAME} must contain canonical base64`);
@@ -196,19 +188,31 @@ function validateMetadata(metadata, request, primaryNames, hashes) {
 }
 
 function validateLatest(latest, request, signature, hashes, repository) {
+  const changes = latestChanges(request);
   requireExactKeys(
     latest,
-    ["notes", "platforms", "product", "pub_date", "schema_version", "version"],
+    [
+      "notes",
+      "platforms",
+      "product",
+      "pub_date",
+      "schema_version",
+      "version",
+      ...(changes === null ? [] : ["changes"]),
+    ],
     LATEST_NAME,
   );
   requireEqual(latest.schema_version, 1, `${LATEST_NAME} schema_version`);
   requireEqual(latest.product, "ZTC", `${LATEST_NAME} product`);
   requireEqual(latest.version, request.version, `${LATEST_NAME} version`);
-  requireEqual(
-    latest.notes,
-    `ZTC ${request.channel} release from source ${request.source_sha}.`,
-    `${LATEST_NAME} notes`,
-  );
+  requireEqual(latest.notes, latestNotes(request), `${LATEST_NAME} notes`);
+  if (changes !== null) {
+    requireEqual(
+      JSON.stringify(latest.changes),
+      JSON.stringify(changes),
+      `${LATEST_NAME} changes`,
+    );
+  }
   requireEqual(
     latest.pub_date,
     request.requested_at,
@@ -242,11 +246,7 @@ function validateRelease(release, request, repository, names, sizes, hashes) {
     `ZTC ${request.version} (${request.channel})`,
     "GitHub release title",
   );
-  requireEqual(
-    descriptor.body,
-    expectedReleaseBody(request),
-    "GitHub release body",
-  );
+  requireEqual(descriptor.body, releaseBody(request), "GitHub release body");
   requireEqual(descriptor.draft, false, "GitHub release draft state");
   requireEqual(descriptor.immutable, true, "GitHub release immutable state");
   requireEqual(
