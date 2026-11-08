@@ -1,14 +1,21 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.11.0-beta.1",
-  "notes": "ZTC preview release from source eedc94d57cd6224856beab9b16b5d6c235978ece.",
-  "pub_date": "2026-11-05T22:12:46.000Z",
+  "version": "0.12.0-beta.1",
+  "notes": "• The Updates window says what's new in a release, with every change a click away, and shows it again after the app updates itself.\n• When you run out of Zerg Router usage, ZTC stops and says why and when your limit resets, instead of retrying for minutes.\n• Signed in with Zerg Router, /usage and the status bar show your Router budget.\n• If a Codex error reply breaks off, ZTC still shows the error code, renews a rejected sign-in and retries, or says to sign in again.",
+  "pub_date": "2026-11-08T01:51:26.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "cd185eea856d94c783f6d70e4793ca778d7dbb9f9c430826a4322211600e5132",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdm5rWENCTmFCVjdWUEVPa0t5NTZhZk1Sa0M3UjNxeWc4aUdZQ1pQU2NQR0FzVnl2YXFndEV5anNxTVYxWmpVMlhNTVkwaVRVWFF0S2FuZzQ3cldSSndNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTIxNzk2CWZpbGU6enRjLmFwcC50YXIuZ3oKcUZBYzBwUFF3VGgvTGFiRXpTZFhURThNRGhGRnIrZUZPa1U0clpOYmlSbnoxOEVtMFRHNkRKV3ZnQ0xLbnp6d08rRDEzaWNXRFpQYzdOL2ZHRk9sREE9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.11.0-beta.1/ztc.app.tar.gz"
+      "sha256": "e29b75462beb24deae5fb23f4eb511879040761b4f6ed5e3ddb6845f946c779c",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdm5DUC9Rc2VtYUNiU2p1NkZDUUh4RkswTFBXNzVBTGdtT3ZxWUpuMGhGTENhaG9vVFdMajFadVgrclNZb3E5cm9LcEd2bGRhTXAzYUJZcHc1NjBGd1FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTA2MjQzCWZpbGU6enRjLmFwcC50YXIuZ3oKUFFVU2VJWW9vSXQ5d1oxSzlRd1FMd09yckloUFJaTEo3TWxVc0FsN2l6UndablJYUmpuTmtTbVBYN0x3U3p3bW8vZVlGcVg0dlBwVHNUalpqZ2IrQnc9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.12.0-beta.1/ztc.app.tar.gz"
     }
-  }
+  },
+  "changes": [
+    "The desktop Updates window says what's new.",
+    "Your Zerg Router budget, where you can see it.",
+    "A Codex error reply that breaks off no longer hides the error.",
+    "Out of Zerg Router usage, ZTC stops and says so.",
+    "Unattended runs exit 4 on a Zerg Router refusal, and a relaunch loop can't hammer Router."
+  ]
 }
