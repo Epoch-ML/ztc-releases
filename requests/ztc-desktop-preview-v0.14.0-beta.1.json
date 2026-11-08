@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.14.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.14.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "031fda4c0d640d982980a7a5a1fe0525bfc5c434",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.14.0-beta.1",
+  "requested_at": "2026-11-08T18:03:47.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.14.0-beta.1",
+    "integrity": "sha512-OyqyIvW1agC0dk1cqayjklam9RbXgNgz8/rBPG6XMKDxIWRVmqYMPQvIgK/rmcLbtheHcH2poWU+9IqhiJnESw==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.14.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "Cancelling a Codex request no longer signs you out: a token refresh already sent always saves your new sign-in.",
+    "A message you type while a turn runs is no longer lost when that turn fails.",
+    "Your one real try past a Zerg Router refusal stays with your message, through cancels, plan mode and turns that fail to start."
+  ],
+  "changes": [
+    "A message you type while a turn runs is no longer lost when that turn fails.",
+    "A cancelled message no longer hands its Zerg Router attempt to the next background turn.",
+    "A message sent after plan mode switched on keeps its Zerg Router attempt.",
+    "One request's cancel no longer fails another's Codex sign-in refresh.",
+    "Cancelling a Codex request no longer signs you out."
+  ]
+}
