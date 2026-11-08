@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.12.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.12.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "33ad37b52b5925299c2982677c1b13d42ba9e489",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.12.0-beta.1",
+  "requested_at": "2026-11-08T01:51:26.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.12.0-beta.1",
+    "integrity": "sha512-g1tDaDEdXRMy2tfa1tmLCH4lyEj/Bg2fykp0BAXQik92lD1I9Tbl8XlL+LHdHyVdK2t0gXdgEYy3Sik8qVdkTA==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.12.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "The Updates window says what's new in a release, with every change a click away, and shows it again after the app updates itself.",
+    "When you run out of Zerg Router usage, ZTC stops and says why and when your limit resets, instead of retrying for minutes.",
+    "Signed in with Zerg Router, /usage and the status bar show your Router budget.",
+    "If a Codex error reply breaks off, ZTC still shows the error code, renews a rejected sign-in and retries, or says to sign in again."
+  ],
+  "changes": [
+    "The desktop Updates window says what's new.",
+    "Your Zerg Router budget, where you can see it.",
+    "A Codex error reply that breaks off no longer hides the error.",
+    "Out of Zerg Router usage, ZTC stops and says so.",
+    "Unattended runs exit 4 on a Zerg Router refusal, and a relaunch loop can't hammer Router."
+  ]
+}
