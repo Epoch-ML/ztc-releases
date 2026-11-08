@@ -1,21 +1,19 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.12.0-beta.1",
-  "notes": "• The Updates window says what's new in a release, with every change a click away, and shows it again after the app updates itself.\n• When you run out of Zerg Router usage, ZTC stops and says why and when your limit resets, instead of retrying for minutes.\n• Signed in with Zerg Router, /usage and the status bar show your Router budget.\n• If a Codex error reply breaks off, ZTC still shows the error code, renews a rejected sign-in and retries, or says to sign in again.",
-  "pub_date": "2026-11-08T01:51:26.000Z",
+  "version": "0.13.0-beta.1",
+  "notes": "• Simulations send each API key or sign-in only to the service that issued it, and never use OPENAI_API_KEY for another provider.\n• Without an embedding route, a simulation's memory matches words instead of meaning, and the simulation says so once.\n• A message you kept over a workspace pause still gets its one try past a Zerg Router refusal.",
+  "pub_date": "2026-11-08T07:42:20.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "e29b75462beb24deae5fb23f4eb511879040761b4f6ed5e3ddb6845f946c779c",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdm5DUC9Rc2VtYUNiU2p1NkZDUUh4RkswTFBXNzVBTGdtT3ZxWUpuMGhGTENhaG9vVFdMajFadVgrclNZb3E5cm9LcEd2bGRhTXAzYUJZcHc1NjBGd1FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTA2MjQzCWZpbGU6enRjLmFwcC50YXIuZ3oKUFFVU2VJWW9vSXQ5d1oxSzlRd1FMd09yckloUFJaTEo3TWxVc0FsN2l6UndablJYUmpuTmtTbVBYN0x3U3p3bW8vZVlGcVg0dlBwVHNUalpqZ2IrQnc9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.12.0-beta.1/ztc.app.tar.gz"
+      "sha256": "80065f19bf17a69c1d1b39de0457ab5786b6f9d40a2a2e2a10dae6d8982b6bd4",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnQvMlNvSTZlcXk2cmdkdG1BWGk2bVJIS1NlM0MyMTZTUkluQjdBZlJ0eGtJclN1MmVReEwxdHR2cm96YWl4bmMvZzBXTDhwazdnRS9QMVRiamR0YWdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTI5Njk5CWZpbGU6enRjLmFwcC50YXIuZ3oKaEVQUDVEUTNmSXN1azRoeEFpSGplQm1BTTZWMUdxbUMvcU9OOTN5NkZaSHNiVDVmL0VTY3gwcW1aZzhkLzZkRG5wTXQwazlsR1AydW53ejZCODV1QUE9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.13.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "The desktop Updates window says what's new.",
-    "Your Zerg Router budget, where you can see it.",
-    "A Codex error reply that breaks off no longer hides the error.",
-    "Out of Zerg Router usage, ZTC stops and says so.",
-    "Unattended runs exit 4 on a Zerg Router refusal, and a relaunch loop can't hammer Router."
+    "A message you kept over a workspace pause still gets its try past a Zerg Router refusal.",
+    "A simulation sends a provider's key only to that provider.",
+    "Simulation memory sends your ZergAI platform login only to the platform."
   ]
 }
