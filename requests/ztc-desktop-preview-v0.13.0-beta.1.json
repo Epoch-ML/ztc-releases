@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.13.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.13.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "cc44ea623eb5f055d0772e635db9ed44093dcc96",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.13.0-beta.1",
+  "requested_at": "2026-11-08T07:42:20.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.13.0-beta.1",
+    "integrity": "sha512-WERiJ938KEweTMrXsHcCSV/miMqBojHgb4laOnqNhGSAfgcwsG6x1C9jeT3AeIFbSo9xKN33mWh8hq6k0ciUKQ==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.13.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "Simulations send each API key or sign-in only to the service that issued it, and never use OPENAI_API_KEY for another provider.",
+    "Without an embedding route, a simulation's memory matches words instead of meaning, and the simulation says so once.",
+    "A message you kept over a workspace pause still gets its one try past a Zerg Router refusal."
+  ],
+  "changes": [
+    "A message you kept over a workspace pause still gets its try past a Zerg Router refusal.",
+    "A simulation sends a provider's key only to that provider.",
+    "Simulation memory sends your ZergAI platform login only to the platform."
+  ]
+}
