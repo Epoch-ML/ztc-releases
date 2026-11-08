@@ -1,19 +1,21 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.13.0-beta.1",
-  "notes": "• Simulations send each API key or sign-in only to the service that issued it, and never use OPENAI_API_KEY for another provider.\n• Without an embedding route, a simulation's memory matches words instead of meaning, and the simulation says so once.\n• A message you kept over a workspace pause still gets its one try past a Zerg Router refusal.",
-  "pub_date": "2026-11-08T07:42:20.000Z",
+  "version": "0.14.0-beta.1",
+  "notes": "• Cancelling a Codex request no longer signs you out: a token refresh already sent always saves your new sign-in.\n• A message you type while a turn runs is no longer lost when that turn fails.\n• Your one real try past a Zerg Router refusal stays with your message, through cancels, plan mode and turns that fail to start.",
+  "pub_date": "2026-11-08T18:03:47.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "80065f19bf17a69c1d1b39de0457ab5786b6f9d40a2a2e2a10dae6d8982b6bd4",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnQvMlNvSTZlcXk2cmdkdG1BWGk2bVJIS1NlM0MyMTZTUkluQjdBZlJ0eGtJclN1MmVReEwxdHR2cm96YWl4bmMvZzBXTDhwazdnRS9QMVRiamR0YWdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTI5Njk5CWZpbGU6enRjLmFwcC50YXIuZ3oKaEVQUDVEUTNmSXN1azRoeEFpSGplQm1BTTZWMUdxbUMvcU9OOTN5NkZaSHNiVDVmL0VTY3gwcW1aZzhkLzZkRG5wTXQwazlsR1AydW53ejZCODV1QUE9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.13.0-beta.1/ztc.app.tar.gz"
+      "sha256": "7c9f58f4ff962b12d4c2b4abf065e9d12e2759b143c083c18a596fb95cc80f7c",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnBSK2hjNWdCck1ERjN3RWxMNG1vaWVvYXZBMWR6c01vV0NVRnVoNkVnR09tOWZNWG1XOWh2Y0k5cm1WRHdyNTZGTXdESTBaZ0NrZ1ZKTkg1VW1ZdEFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTY4MTEzCWZpbGU6enRjLmFwcC50YXIuZ3oKa29UaDAwQUI5SitKNGYxSGJHKzg0ajNnMVRGb0hteXgydzNWS25HV1VTRk1QaFNGdjdjZy9NNmZYbnNEYWxZdGRpNU51RFF5eDJHb1huSTIrNjliQ1E9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.14.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "A message you kept over a workspace pause still gets its try past a Zerg Router refusal.",
-    "A simulation sends a provider's key only to that provider.",
-    "Simulation memory sends your ZergAI platform login only to the platform."
+    "A message you type while a turn runs is no longer lost when that turn fails.",
+    "A cancelled message no longer hands its Zerg Router attempt to the next background turn.",
+    "A message sent after plan mode switched on keeps its Zerg Router attempt.",
+    "One request's cancel no longer fails another's Codex sign-in refresh.",
+    "Cancelling a Codex request no longer signs you out."
   ]
 }
