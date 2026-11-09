@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.16.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.16.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "34ab7a824ea90e1be68a379841fdbaf4a620b717",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.16.0-beta.1",
+  "requested_at": "2026-11-09T05:56:49.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.16.0-beta.1",
+    "integrity": "sha512-tG0BT7sGGOP0FDGjeF5d/vA3CjrbYBnuKzmnGSznkFSrrRAkY1TIF7TpRcGpIZlvJqhQlRYk6/N6iVwM7T++Xg==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.16.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "In the desktop app, a terminal pane split or zoomed down to one column no longer freezes the app or uses up your Mac's memory."
+  ],
+  "changes": [
+    "A desktop terminal pane squeezed to one column no longer freezes ZTerm and takes your Mac's memory.",
+    "A desktop terminal pane is held to 2,048 columns and 1,024 rows."
+  ]
+}
