@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.15.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.15.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "a5f576f099d2d195d9a5eb94f7a89f1ac5495e02",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.15.0-beta.1",
+  "requested_at": "2026-11-09T01:10:47.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.15.0-beta.1",
+    "integrity": "sha512-5+awBq1w8AP03dLgDqhq2g+5nsDpmSrbcwIGfZ1PKvVLaDkEQlAaUWfFT20OeRooDLmvEuSiBlZjtKuHj0snKw==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.15.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "If ZTC's agent ran on your Claude subscription, it now uses your Anthropic API key (billed per token) or Zerg Router, or asks you to pick.",
+    "Your Claude subscription still works in ZTC: /claude opens your installed Claude Code in a pane, signed in with your own account.",
+    "ZTC never switches accounts on its own: the account that pays changes only when you choose one in /accounts.",
+    "Dictation stays on this computer unless you choose OpenAI yourself, and macOS dictation now runs on-device only."
+  ],
+  "changes": [
+    "ZTC's agent no longer runs on a Claude subscription.",
+    "Accounts switch only when you choose one.",
+    "Anthropic's default model is a real Messages API id.",
+    "/dictation model and /dictation device save what they say they set.",
+    "Dictation's audio stays on this computer unless you choose otherwise.",
+    "Nothing an agent writes reaches ZTC's main session as your typing in the desktop app."
+  ]
+}
