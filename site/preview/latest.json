@@ -1,22 +1,18 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.15.0-beta.1",
-  "notes": "• If ZTC's agent ran on your Claude subscription, it now uses your Anthropic API key (billed per token) or Zerg Router, or asks you to pick.\n• Your Claude subscription still works in ZTC: /claude opens your installed Claude Code in a pane, signed in with your own account.\n• ZTC never switches accounts on its own: the account that pays changes only when you choose one in /accounts.\n• Dictation stays on this computer unless you choose OpenAI yourself, and macOS dictation now runs on-device only.",
-  "pub_date": "2026-11-09T01:10:47.000Z",
+  "version": "0.16.0-beta.1",
+  "notes": "• In the desktop app, a terminal pane split or zoomed down to one column no longer freezes the app or uses up your Mac's memory.",
+  "pub_date": "2026-11-09T05:56:49.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "0391f7d98813b860df05587c7606c0413009ce5b6e39e0487fb8345398642c3e",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnJldmpwL2xKbEZjaEVLWGlGUmFad2gzaVZXcEpNZC9mYXA3RldZZ2pzSDVFdlNYSXMreERuMmpySUZCL2hEN3dCeGJDUnFiNmZJWS9UT1VIWGNvTmdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTkxOTk4CWZpbGU6enRjLmFwcC50YXIuZ3oKUmdoNHlObHRSbjA3K1RnUTZPT2pHdEJ1clcyUGt4S2hvanhBM291NUZSdENLQVFqTVlzUDlVKzloSTRHWEU2Tk1pMEMzclR0OElwMGFBL2ROcG1sQmc9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.15.0-beta.1/ztc.app.tar.gz"
+      "sha256": "af2f1b398d0ff1b3762dd6283a758e0025676efe958311b11767d827b7dfbe98",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnQrQ1lvK1Z3OFk2bzhvbko4L1dGdDlVbFQrb1ZoRHlhdkV1M2g4My9zR3ZQVmlaZEpVWlpidnFSTlVKN1lvc2lKUHNZMlgweDJZMk9nZlpSWS9TQWdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjA3MjIyCWZpbGU6enRjLmFwcC50YXIuZ3oKdGFIOWdTVGpQMStuK1lmNzQ1eFFsNHlOQlNRSWI0OXVvN3A5NG9HdjV1UVdiakkxR0l5cUJzWFVEc1lUSmlFc01wdTlHYnZRc3JBeWVpTXVWSVhzRGc9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.16.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "ZTC's agent no longer runs on a Claude subscription.",
-    "Accounts switch only when you choose one.",
-    "Anthropic's default model is a real Messages API id.",
-    "/dictation model and /dictation device save what they say they set.",
-    "Dictation's audio stays on this computer unless you choose otherwise.",
-    "Nothing an agent writes reaches ZTC's main session as your typing in the desktop app."
+    "A desktop terminal pane squeezed to one column no longer freezes ZTerm and takes your Mac's memory.",
+    "A desktop terminal pane is held to 2,048 columns and 1,024 rows."
   ]
 }
