@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.18.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.18.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "3c46d0646d920fb6388fee3b214ce346983dc5f6",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.18.0-beta.1",
+  "requested_at": "2026-11-10T18:56:24.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.18.0-beta.1",
+    "integrity": "sha512-oY86HXs6MbhjDmmZcxZCqkCmOMkpEDMvHXRj6IHqDfSdDsV+QXOhQT1/WltLZSkNP7uR6Yxmk9hacAuIrgVF7g==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.18.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "After Zerg Router refuses a request, typing that reaches a ZTC pane or colony cell no longer uses your one real attempt.",
+    "When the browser mirror requires sign-in, programs in a pane no longer get a credential that speaks to ZTC as you.",
+    "A ZTC pane opened with a task picks up its session again when it restarts, instead of starting over with its task.",
+    "A Claude Code or Codex pane you open after a /sim run reaches your workspace again."
+  ],
+  "changes": [
+    "After Zerg Router refuses a request, typing that reaches a ZTC pane or a colony cell no longer uses your one real attempt.",
+    "A ZTC pane opened with a task picks up its session again when it restarts.",
+    "Panes rejoin the mirror after /mirror stop and /mirror start on the same port.",
+    "A Claude Code or Codex pane you open after a /sim run can reach your workspace.",
+    "When the browser mirror requires sign-in, ZTC no longer gives a program in a pane a credential that speaks to ZTC as you or as another pane."
+  ]
+}
