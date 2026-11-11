@@ -1,21 +1,32 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.18.0-beta.1",
-  "notes": "• After Zerg Router refuses a request, typing that reaches a ZTC pane or colony cell no longer uses your one real attempt.\n• When the browser mirror requires sign-in, programs in a pane no longer get a credential that speaks to ZTC as you.\n• A ZTC pane opened with a task picks up its session again when it restarts, instead of starting over with its task.\n• A Claude Code or Codex pane you open after a /sim run reaches your workspace again.",
-  "pub_date": "2026-11-10T18:56:24.000Z",
+  "version": "0.19.0-beta.1",
+  "notes": "• In the desktop app, + opens a ZTC tab, and the ▾ beside it opens new tabs and splits of ZTC, Claude Code, Codex or a shell.\n• Cmd+D now splits a shell; Ctrl+Cmd+Z, A and O split ZTC, Claude Code and Codex, and Ctrl+Cmd+N opens the new-pane menu.\n• /provider lists Zerg Router's providers and your own keys, with what each needs, and switches this pane and new panes in one step.\n• The desktop app's model chip asks for the provider first, and switching back to a provider brings back the model you last used with it.",
+  "pub_date": "2026-11-11T11:33:13.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "8ba64c2bba6f68aeba9fdf6eaf5de0646ebf622fec921e750c69694ce4a1a74c",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnJmQ1JMbnRZM1VhZ3dYYVk4UVp2TVR5MTV5NDFXM3lydkNkbktqRmdzYjhvT2Y2ZzFoY2g4VXcvQzQ4RU1mTkdvTHp2WFhvS0IwM1RHQTVWZEhZclEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzM5ODY1CWZpbGU6enRjLmFwcC50YXIuZ3oKQzBOVDdUd29ZSUhVbWpzOWUxZVd4YWhVNzdaVEVpVGVvc3RWZ253QzU5SU56VVRYNzl5QkoxMmhWaXZVa0VmMnQrazNtbUx1TXFZR1Evamp4QWIvQ3c9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.18.0-beta.1/ztc.app.tar.gz"
+      "sha256": "33f8d7ba7db89638761e3f796b3ceb7de4f3e6604d9266d918025d4b81ae8b0b",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmdXRjU2NU50V2ZtYS9KZ2JrdzNSZkxTS25EQTBpbTczdWpZR3VSdE50Q0tLK3RWcEZMV0dNV1V4OG1UZlZxY3RuMHBRM0diUkt0cEtCRnc5ZUE0SFF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDI1NTEzCWZpbGU6enRjLmFwcC50YXIuZ3oKYzVRdy9jN20rdm8rL2ZiL2tZRG44dkE2Zjk0NzFKOGhRUDgxd0Y4YlcvNHVuVktCLzNGRnN1VGtZanpFeEVXTXlHakhudnV0TWFDOUFhdlVFTzZwRFE9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.19.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "After Zerg Router refuses a request, typing that reaches a ZTC pane or a colony cell no longer uses your one real attempt.",
-    "A ZTC pane opened with a task picks up its session again when it restarts.",
-    "Panes rejoin the mirror after /mirror stop and /mirror start on the same port.",
-    "A Claude Code or Codex pane you open after a /sim run can reach your workspace.",
-    "When the browser mirror requires sign-in, ZTC no longer gives a program in a pane a credential that speaks to ZTC as you or as another pane."
+    "A ZTC pane started on your own key can switch to a provider only Zerg Router serves.",
+    "A new tab starts on the provider another pane switched to.",
+    "A ZTC or shell pane the desktop app can't open says why.",
+    "/models set saves the provider with the model.",
+    "The desktop app's new-tab menu stays open after the click that opens it.",
+    "An open menu in the desktop app keeps the clicks and keys meant for it.",
+    "A desktop pane's header shows the pane's name, not the title its program sets.",
+    "A desktop key binding with a word the app doesn't know binds nothing.",
+    "A model only Zerg Router serves tells you how to reach it.",
+    "A reasoning level a Zerg Router model doesn't offer is refused where you set it.",
+    "/provider chooses what you run on.",
+    "The desktop app's model chip changes provider.",
+    "Switching back to a provider lands on the model you last used with it",
+    "The desktop app's tab strip has a ▾ next to its +, for new tabs and splits of every kind.",
+    "Signed in to Zerg Router, ZTC refreshes Router's list at startup even when you work on your own key",
+    "Cmd+D in the desktop app splits the focused pane with a shell, as in iTerm2 and Ghostty."
   ]
 }
