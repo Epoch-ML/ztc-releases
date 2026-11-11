@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.19.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.19.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "600660b7ea2bea96309e556ec7a48dd61457b8aa",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.19.0-beta.1",
+  "requested_at": "2026-11-11T11:33:13.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.19.0-beta.1",
+    "integrity": "sha512-SjDpqX12F4vOAv2WWiHd6+wwDtu/7qrSS/Pc1XUeVJ6EDLkSsg5gkBWWafR3tnuNGsU7idFRAzosuQylnaBRfA==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.19.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "In the desktop app, + opens a ZTC tab, and the ▾ beside it opens new tabs and splits of ZTC, Claude Code, Codex or a shell.",
+    "Cmd+D now splits a shell; Ctrl+Cmd+Z, A and O split ZTC, Claude Code and Codex, and Ctrl+Cmd+N opens the new-pane menu.",
+    "/provider lists Zerg Router's providers and your own keys, with what each needs, and switches this pane and new panes in one step.",
+    "The desktop app's model chip asks for the provider first, and switching back to a provider brings back the model you last used with it."
+  ],
+  "changes": [
+    "A ZTC pane started on your own key can switch to a provider only Zerg Router serves.",
+    "A new tab starts on the provider another pane switched to.",
+    "A ZTC or shell pane the desktop app can't open says why.",
+    "/models set saves the provider with the model.",
+    "The desktop app's new-tab menu stays open after the click that opens it.",
+    "An open menu in the desktop app keeps the clicks and keys meant for it.",
+    "A desktop pane's header shows the pane's name, not the title its program sets.",
+    "A desktop key binding with a word the app doesn't know binds nothing.",
+    "A model only Zerg Router serves tells you how to reach it.",
+    "A reasoning level a Zerg Router model doesn't offer is refused where you set it.",
+    "/provider chooses what you run on.",
+    "The desktop app's model chip changes provider.",
+    "Switching back to a provider lands on the model you last used with it",
+    "The desktop app's tab strip has a ▾ next to its +, for new tabs and splits of every kind.",
+    "Signed in to Zerg Router, ZTC refreshes Router's list at startup even when you work on your own key",
+    "Cmd+D in the desktop app splits the focused pane with a shell, as in iTerm2 and Ghostty."
+  ]
+}
