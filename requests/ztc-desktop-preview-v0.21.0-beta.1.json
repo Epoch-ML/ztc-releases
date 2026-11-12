@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.21.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.21.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "0fc31777ffce0b85f48844e05fd12bf499e4e77a",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.21.0-beta.1",
+  "requested_at": "2026-11-12T16:33:42.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.21.0-beta.1",
+    "integrity": "sha512-NkUX6Yk3AwHxmCbvP4UYVgEu0NTTxa8+B+xFLUFN402a5+PfOyhkffAbaB7jdXtuO1tIYmeI36GETWTA3NnfUA==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.21.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "In the desktop app, each ZTC pane's header shows its provider and model, and their menus switch that pane alone or make it the default.",
+    "A Zerg Router provider with no key opens Router's Credentials page from a pane's menu; a key you haven't set is asked for in that pane.",
+    "A ZTC split starts on the provider, model and route of the pane it splits; a new tab still starts on the default for new panes.",
+    "A default saved in one ZTC pane is no longer erased by another pane's save, and desktop panes pick up new keys and logins in seconds."
+  ],
+  "changes": [
+    "A model chosen for the main pane alone reaches everything that reads it.",
+    "A default saved in one pane is no longer erased by another pane's save.",
+    "Restores and the web mirror follow a pane's own switch.",
+    "The title bar offers no Queue or Stop for a ZTC pane whose program exited.",
+    "A native ZTC pane works as any ZTC pane in the desktop app.",
+    "Each ZTC pane in the desktop app has its own provider and model menus.",
+    "Choosing a provider that isn't set up asks for what it needs in that pane.",
+    "A ZTC split starts on the provider, model and route of the pane it splits",
+    "The title bar's model chip switches only the focused pane",
+    "A default you choose in a run launched with --provider, --model or --auth-mode applies to the panes it opens."
+  ]
+}
