@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.20.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.20.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "919c0f920e13b7d91a922b24823db940a8721e06",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.20.0-beta.1",
+  "requested_at": "2026-11-12T07:16:43.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.20.0-beta.1",
+    "integrity": "sha512-C76ksdPHAH2kKlexG2F+xEU0eRLRncu6xD3DWlc2GOrl31Q/PoNQ9q1/WyyNkbEx0O2S0tRLHxs4kqlJWLbhfA==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.20.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "In the desktop app, More… in the new-pane menu (Ctrl+Cmd+N or the ▾) opens native ZTC and shell panes and delegated Codex and ZTC workers.",
+    "Delegated ZTC workers run read-only on a locked Zerg Router profile and ask you in the app for more; delegated Codex runs read-only too.",
+    "Saved layouts bring native panes back inactive, and resuming one checks it is the exact same session, so old work never restarts itself."
+  ],
+  "changes": [
+    "The new-pane menu's More… opens native panes and delegated workers.",
+    "Native panes run on a lease of their worktree, and delegated workers on a task file.",
+    "Status lists native panes and delegated workers, and the title bar names the delegated Router.",
+    "Saved layouts bring native panes back inactive.",
+    "Delegated ZTC runs read-only on a locked Zerg Router profile and asks you first.",
+    "npm run acceptance:daily-driver checks the desktop's native panes.",
+    "Library hosts can supply tool checkpoints, compaction, guarded remote resources, hooks and MCP servers.",
+    "The zerg-ztc/tools export gives a library the CLI's default tool list",
+    "A headless run can ask a remote service for approvals and answers",
+    "Domain tools declare their effects and capabilities",
+    "A run set up by environment alone can name an OpenAI-compatible endpoint"
+  ]
+}
