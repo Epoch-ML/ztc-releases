@@ -1,32 +1,27 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.19.0-beta.1",
-  "notes": "• In the desktop app, + opens a ZTC tab, and the ▾ beside it opens new tabs and splits of ZTC, Claude Code, Codex or a shell.\n• Cmd+D now splits a shell; Ctrl+Cmd+Z, A and O split ZTC, Claude Code and Codex, and Ctrl+Cmd+N opens the new-pane menu.\n• /provider lists Zerg Router's providers and your own keys, with what each needs, and switches this pane and new panes in one step.\n• The desktop app's model chip asks for the provider first, and switching back to a provider brings back the model you last used with it.",
-  "pub_date": "2026-11-11T11:33:13.000Z",
+  "version": "0.20.0-beta.1",
+  "notes": "• In the desktop app, More… in the new-pane menu (Ctrl+Cmd+N or the ▾) opens native ZTC and shell panes and delegated Codex and ZTC workers.\n• Delegated ZTC workers run read-only on a locked Zerg Router profile and ask you in the app for more; delegated Codex runs read-only too.\n• Saved layouts bring native panes back inactive, and resuming one checks it is the exact same session, so old work never restarts itself.",
+  "pub_date": "2026-11-12T07:16:43.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "33f8d7ba7db89638761e3f796b3ceb7de4f3e6604d9266d918025d4b81ae8b0b",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmdXRjU2NU50V2ZtYS9KZ2JrdzNSZkxTS25EQTBpbTczdWpZR3VSdE50Q0tLK3RWcEZMV0dNV1V4OG1UZlZxY3RuMHBRM0diUkt0cEtCRnc5ZUE0SFF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDI1NTEzCWZpbGU6enRjLmFwcC50YXIuZ3oKYzVRdy9jN20rdm8rL2ZiL2tZRG44dkE2Zjk0NzFKOGhRUDgxd0Y4YlcvNHVuVktCLzNGRnN1VGtZanpFeEVXTXlHakhudnV0TWFDOUFhdlVFTzZwRFE9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.19.0-beta.1/ztc.app.tar.gz"
+      "sha256": "26d968909745b41ae41c4f26072d577a210f389e6bc9e3f5e69a911b1a958ef8",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnZxYVY1ZE83RVJETXFVNW8zL2J5b2FJY3k4RGFwYS9NMUpKelhNeUFZQTcyUEVLZHE3ZndQTk1FZzFWbWxGMzRtUmNSVkdSV28rMW1vakZpR3lwR3dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDcxMzAyCWZpbGU6enRjLmFwcC50YXIuZ3oKNTRFcnBjdmJMdkx4aEUrcHJ0ZHFUWGpkMEpSaVRENmcvbDFsakN5Z3ZCVlRCbVZvbDhmcERYQ2Z6MDBKTjZkZUc4dHFldStmVFNmNndySWZlVlA0Qnc9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.20.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "A ZTC pane started on your own key can switch to a provider only Zerg Router serves.",
-    "A new tab starts on the provider another pane switched to.",
-    "A ZTC or shell pane the desktop app can't open says why.",
-    "/models set saves the provider with the model.",
-    "The desktop app's new-tab menu stays open after the click that opens it.",
-    "An open menu in the desktop app keeps the clicks and keys meant for it.",
-    "A desktop pane's header shows the pane's name, not the title its program sets.",
-    "A desktop key binding with a word the app doesn't know binds nothing.",
-    "A model only Zerg Router serves tells you how to reach it.",
-    "A reasoning level a Zerg Router model doesn't offer is refused where you set it.",
-    "/provider chooses what you run on.",
-    "The desktop app's model chip changes provider.",
-    "Switching back to a provider lands on the model you last used with it",
-    "The desktop app's tab strip has a ▾ next to its +, for new tabs and splits of every kind.",
-    "Signed in to Zerg Router, ZTC refreshes Router's list at startup even when you work on your own key",
-    "Cmd+D in the desktop app splits the focused pane with a shell, as in iTerm2 and Ghostty."
+    "The new-pane menu's More… opens native panes and delegated workers.",
+    "Native panes run on a lease of their worktree, and delegated workers on a task file.",
+    "Status lists native panes and delegated workers, and the title bar names the delegated Router.",
+    "Saved layouts bring native panes back inactive.",
+    "Delegated ZTC runs read-only on a locked Zerg Router profile and asks you first.",
+    "npm run acceptance:daily-driver checks the desktop's native panes.",
+    "Library hosts can supply tool checkpoints, compaction, guarded remote resources, hooks and MCP servers.",
+    "The zerg-ztc/tools export gives a library the CLI's default tool list",
+    "A headless run can ask a remote service for approvals and answers",
+    "Domain tools declare their effects and capabilities",
+    "A run set up by environment alone can name an OpenAI-compatible endpoint"
   ]
 }

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "version": "0.20.0-beta.1",
+  "channel": "preview",
+  "platform": "darwin-aarch64",
+  "bundle_identifier": "dev.zerg.zterm",
+  "source_sha": "919c0f920e13b7d91a922b24823db940a8721e06",
+  "apple_notarized": true,
+  "artifacts": [
+    {
+      "name": "ztc.app.tar.gz",
+      "sha256": "26d968909745b41ae41c4f26072d577a210f389e6bc9e3f5e69a911b1a958ef8"
+    },
+    {
+      "name": "ztc.app.tar.gz.sig",
+      "sha256": "c5293c8ffb17b887dccea1fc98585fa1e7b09635d7537b2040f2484463e4c398"
+    },
+    {
+      "name": "ztc_0.20.0-beta.1_aarch64.dmg",
+      "sha256": "a8e808888e32ea002fb4337ff00bcf9b1acb2bae940c88f0fa2813c4ead2a87a"
+    }
+  ]
+}
