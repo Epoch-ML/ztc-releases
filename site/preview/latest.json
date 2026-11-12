@@ -1,27 +1,26 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.20.0-beta.1",
-  "notes": "• In the desktop app, More… in the new-pane menu (Ctrl+Cmd+N or the ▾) opens native ZTC and shell panes and delegated Codex and ZTC workers.\n• Delegated ZTC workers run read-only on a locked Zerg Router profile and ask you in the app for more; delegated Codex runs read-only too.\n• Saved layouts bring native panes back inactive, and resuming one checks it is the exact same session, so old work never restarts itself.",
-  "pub_date": "2026-11-12T07:16:43.000Z",
+  "version": "0.21.0-beta.1",
+  "notes": "• In the desktop app, each ZTC pane's header shows its provider and model, and their menus switch that pane alone or make it the default.\n• A Zerg Router provider with no key opens Router's Credentials page from a pane's menu; a key you haven't set is asked for in that pane.\n• A ZTC split starts on the provider, model and route of the pane it splits; a new tab still starts on the default for new panes.\n• A default saved in one ZTC pane is no longer erased by another pane's save, and desktop panes pick up new keys and logins in seconds.",
+  "pub_date": "2026-11-12T16:33:42.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "26d968909745b41ae41c4f26072d577a210f389e6bc9e3f5e69a911b1a958ef8",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnZxYVY1ZE83RVJETXFVNW8zL2J5b2FJY3k4RGFwYS9NMUpKelhNeUFZQTcyUEVLZHE3ZndQTk1FZzFWbWxGMzRtUmNSVkdSV28rMW1vakZpR3lwR3dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDcxMzAyCWZpbGU6enRjLmFwcC50YXIuZ3oKNTRFcnBjdmJMdkx4aEUrcHJ0ZHFUWGpkMEpSaVRENmcvbDFsakN5Z3ZCVlRCbVZvbDhmcERYQ2Z6MDBKTjZkZUc4dHFldStmVFNmNndySWZlVlA0Qnc9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.20.0-beta.1/ztc.app.tar.gz"
+      "sha256": "e144644e58321f1e5eace14f46da72755e7389a44e8763836ab3c90f2dcdc828",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnVrUzloR1NwV2lXTi9zOXlTOERqOXhzeHpvd3JjbmtZTHdsTGhrYjZJQm12K1llN3pWVzhzM0FDMkIwSnpRUk5wTW1IWTIvWkIrbFg0UDFNcjhHQUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTA0ODg2CWZpbGU6enRjLmFwcC50YXIuZ3oKekN2Q20rYWF0N1ZFQWJVWlBjWERPOHQ1SllBdTg4cUtkQnZjYUlkbFVhTFcwUmJ3YlNObVlhL1JRM2hiV25nNXRyaHBjMU1adlkxWkJZMDFBazQ2Q1E9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.21.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "The new-pane menu's More… opens native panes and delegated workers.",
-    "Native panes run on a lease of their worktree, and delegated workers on a task file.",
-    "Status lists native panes and delegated workers, and the title bar names the delegated Router.",
-    "Saved layouts bring native panes back inactive.",
-    "Delegated ZTC runs read-only on a locked Zerg Router profile and asks you first.",
-    "npm run acceptance:daily-driver checks the desktop's native panes.",
-    "Library hosts can supply tool checkpoints, compaction, guarded remote resources, hooks and MCP servers.",
-    "The zerg-ztc/tools export gives a library the CLI's default tool list",
-    "A headless run can ask a remote service for approvals and answers",
-    "Domain tools declare their effects and capabilities",
-    "A run set up by environment alone can name an OpenAI-compatible endpoint"
+    "A model chosen for the main pane alone reaches everything that reads it.",
+    "A default saved in one pane is no longer erased by another pane's save.",
+    "Restores and the web mirror follow a pane's own switch.",
+    "The title bar offers no Queue or Stop for a ZTC pane whose program exited.",
+    "A native ZTC pane works as any ZTC pane in the desktop app.",
+    "Each ZTC pane in the desktop app has its own provider and model menus.",
+    "Choosing a provider that isn't set up asks for what it needs in that pane.",
+    "A ZTC split starts on the provider, model and route of the pane it splits",
+    "The title bar's model chip switches only the focused pane",
+    "A default you choose in a run launched with --provider, --model or --auth-mode applies to the panes it opens."
   ]
 }
