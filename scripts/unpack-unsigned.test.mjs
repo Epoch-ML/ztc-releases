@@ -28,8 +28,11 @@ test("unsigned artifact transfer preserves executable modes and exact binary byt
   const executable = join(f.root, "ztc.app/Contents/MacOS/ZTerm");
   await writeFile(executable, "executable fixture");
   await chmod(executable, 0o755);
+  // tar is a process boundary; COPYFILE_DISABLE keeps macOS metadata files out.
   assert.equal(
-    spawnSync("tar", ["-czf", f.archive, "-C", f.root, "ztc.app"]).status,
+    spawnSync("tar", ["-czf", f.archive, "-C", f.root, "ztc.app"], {
+      env: { ...process.env, COPYFILE_DISABLE: "1" },
+    }).status,
     0,
   );
   const result = spawnSync("python3", [script, f.archive, f.out], {
