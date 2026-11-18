@@ -2,29 +2,29 @@
   "schemaVersion": 1,
   "product": "ZTC",
   "channel": "preview",
-  "version": "0.23.0-beta.1",
-  "sourceSha": "727ea034256a5c0fc705e71eac8ef1a4dff831a5",
+  "version": "0.24.0-beta.1",
+  "sourceSha": "ca23b60a3d4136f87548a5e1c1c656993b3a344d",
   "platform": "darwin-arm64",
-  "publishedAt": "2026-11-14T08:08:21.000Z",
+  "publishedAt": "2026-11-17T08:37:29.000Z",
   "npm": {
     "name": "@zergai/ztc",
-    "version": "0.23.0-beta.1",
-    "integrity": "sha512-8y3ieIV02rjuJehf3x41DWfZDUKH/Xo55xoh26mNvTwRD/GT78H2L9RfZzGdT5JqO9haDfjkXXqhqyvGvsHQ/w==",
-    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.23.0-beta.1.tgz"
+    "version": "0.24.0-beta.1",
+    "integrity": "sha512-uNidzGb8MW1P4ZUvTQV39fkLal0tziwlmHG20bd/YRkisbzGeeuLVLZ/vBNjt0Wq4YXzNxP4TM63IZ1SL3GL9Q==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.24.0-beta.1.tgz"
   },
   "runtime": {
     "nodeVersion": "22.23.2",
-    "manifestSha256": "c24dd728389187ed7f2b31a1ff8eae6fd00398af062fb36f7d74f418df50ff83"
+    "manifestSha256": "21c4ec73b5cd55e5daee364104e7fb12626fe3d8bc01f59f532a1645323fb309"
   },
   "assets": {
     "archive": {
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.23.0-beta.1/ztc.app.tar.gz",
-      "sha256": "29ecca934dc96207e39fda5e733324843a1f116f968d0e7ea23835a8ff514984",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmw4ZTdocmVOWHdPbzltQlJWWUNMejlIdkU1Ris1aGVGcWt2Ym42blFpWWk0Z0NpQnczb3RDQlVSTmtiQnBJKzJ4a21HWTNmRkxNeFZCT0FUS3pBdFFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzgzOTYzCWZpbGU6enRjLmFwcC50YXIuZ3oKMmJuWDBZL1crUFpoODFIUmZDM3NTUUc0QUZiVUxTOFJvU1luY3lGUU5uQ1UyemJPNGdoQktJVGhFZVc2VUFuM1c2TEZlZWwrVGtKbkJzVW1pdEQ4RHc9PQo="
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.24.0-beta.1/ztc.app.tar.gz",
+      "sha256": "37b443b0a818cffc857304ce27672ea3467a36b98cee8cbe9bb1c0a181fec6cc",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmhIQjY3NXdrQ0pJem1kUjZQT1pkdmQ3WG85MWZTQ1Y2T3E5akliNngxNHVkbDVaK3Y5a2NkMXNCWHkzYXpJK1Q1MkJsR3hOcGhLZ1hTT2djNElkZ3d3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTQwMjgxCWZpbGU6enRjLmFwcC50YXIuZ3oKZURHZ3lMUENHQXB3c0tDUW1PUU0ybWZ4bFVNT2tJTFNsay8xQlFVWUUyR25HM2N6eUg2VytQUnpITjBzMk5YV3JhU2VMcE0rb2N6R2JzUzJobVM3Qmc9PQo="
     },
     "dmg": {
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.23.0-beta.1/ztc_0.23.0-beta.1_aarch64.dmg",
-      "sha256": "51472def66eed44165a5bb2816f944d388a0c8b788b57c41a8bfe05085a96b87"
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.24.0-beta.1/ztc_0.24.0-beta.1_aarch64.dmg",
+      "sha256": "9f9f1ed128c33576360c37590126b305b051a2912a3569ce1bf6dad5a356964a"
     }
   },
   "bundle": {
