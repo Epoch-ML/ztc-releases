@@ -41,6 +41,26 @@ test("formula description satisfies Homebrew's no-leading-name rule", () => {
   assert.ok(formula.includes(`url "${value.assets.archive.url}"`));
 });
 
+test("formula carries the header brew style asks of a formula outside a tap", async (t) => {
+  const formula = homebrewFormula(release());
+  assert.ok(formula.startsWith("# frozen_string_literal: true\n\n"), "the frozen string literal comment comes first");
+  assert.match(formula, /\n# [^\n]+\nclass Ztc < Formula\n/, "a documentation comment sits right above the class");
+  const brew = spawnSync("brew", ["--version"], { encoding: "utf8" });
+  if (brew.status !== 0) {
+    t.skip("Homebrew is not installed here");
+    return;
+  }
+  const dir = await mkdtemp(join(tmpdir(), "ztc-formula-style-"));
+  try {
+    await mkdir(join(dir, "Formula"));
+    await writeFile(join(dir, "Formula", "ztc.rb"), formula);
+    const style = spawnSync("brew", ["style", "Formula/ztc.rb"], { cwd: dir, encoding: "utf8" });
+    assert.equal(style.status, 0, `brew style refused the formula:\n${style.stdout}${style.stderr}`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("formula orders architecture before operating-system requirements", () => {
   const formula = homebrewFormula(release());
   assert.match(formula, /\n  depends_on arch: :arm64\n  depends_on :macos\n/);
