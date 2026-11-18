@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.24.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.24.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "ca23b60a3d4136f87548a5e1c1c656993b3a344d",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.24.0-beta.1",
+  "requested_at": "2026-11-17T08:37:29.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.24.0-beta.1",
+    "integrity": "sha512-uNidzGb8MW1P4ZUvTQV39fkLal0tziwlmHG20bd/YRkisbzGeeuLVLZ/vBNjt0Wq4YXzNxP4TM63IZ1SL3GL9Q==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.24.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "Resume, continue or fork your Claude Code and Codex sessions: /claude resume and /codex resume list them, in this folder or all of them.",
+    "Main answers a Claude Code or Codex pane once the work on its message is done, and the pane sets how many answers come without you.",
+    "Close a desktop tab with its ×, a middle-click, its menu or ⌥⌘W, and you're asked first if closing it would stop work running in it.",
+    "File tools and patches stay in the folders your permission profile allows: a path sent as a list can no longer skip the folder rules."
+  ],
+  "changes": [
+    "Main answers an agent's message once it has finished, with its answer.",
+    "Two messages typed into a Claude Code or Codex pane in a row arrive as two.",
+    "What ZTC types into a Claude Code or Codex pane carries no control characters.",
+    "Main's messages carry the name its pane goes by.",
+    "Closing a prompt that opened in Main by itself says what it closed.",
+    "A line ZTC shows only in this terminal stays out of the turn's recap.",
+    "/help shows every command as you type it.",
+    "A Router key that is stored broken, or that its provider refused, says so in Router's words.",
+    "A request Zerg Router fails says what failed, with its HTTP status.",
+    "A session whose diagnostics were masked differently between checkpoints loads again.",
+    "Resume your Claude Code and Codex sessions.",
+    "/claude -- TEXT and /codex -- TEXT start a fresh session with the text as its prompt, word for word",
+    "The pane that starts an exchange with Main chooses how long Main answers it by itself.",
+    "Close a tab in the desktop app.",
+    "The desktop app's mirror answers only the link ZTC gives.",
+    "A pane's own credential no longer types as you, or into a shell or a command pane.",
+    "A message for a ZTC pane that is still starting waits for it, and is never typed in.",
+    "The pane relay forwards only what a pane may send.",
+    "On Linux the pane relay's socket is yours alone.",
+    "apply_patch reads a diff's names exactly as git does, NUL bytes and all.",
+    "A confined write cannot build a new git directory.",
+    "A path or patch must be well-formed Unicode text.",
+    "apply_patch writes only where a permission profile allows.",
+    "git no longer runs a command a confined agent planted.",
+    "apply_patch no longer shows a file outside the root through a link it made.",
+    "A Codex apply_patch heredoc is a file write.",
+    "A denied path is denied however it's spelled.",
+    "A file tool reads only a path the profile checked."
+  ]
+}
