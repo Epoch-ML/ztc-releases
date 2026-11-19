@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.25.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.25.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "0ce51c097abf97a57a15730443ac8fc401dc14ec",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.25.0-beta.1",
+  "requested_at": "2026-11-19T12:41:11.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.25.0-beta.1",
+    "integrity": "sha512-TB3wLOBE9fUBUZwuQlh1HIfsOs5IkgzWI+LuJQgYwQq5CYp13rJgK6e7obN6YSNibUYacZRSUqgkbTYCIUSBJw==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.25.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "Images that MCP and other tools return now reach models that take images; others get a short placeholder instead of pages of text.",
+    "Each request sends only your latest 3 tool images, so a long session's screenshots don't pile up in every request.",
+    "The desktop app now finds updates on zergai.com, so new releases no longer wait on GitHub Pages; older apps need one update by hand."
+  ],
+  "changes": [
+    "A model that takes images now sees the images your tools return.",
+    "A tool's image no longer reaches the model as text.",
+    "The desktop app finds new releases without GitHub Pages.",
+    "The desktop app also takes its downloads from zergai.com."
+  ]
+}
