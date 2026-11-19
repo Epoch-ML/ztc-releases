@@ -1,44 +1,20 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.24.0-beta.1",
-  "notes": "• Resume, continue or fork your Claude Code and Codex sessions: /claude resume and /codex resume list them, in this folder or all of them.\n• Main answers a Claude Code or Codex pane once the work on its message is done, and the pane sets how many answers come without you.\n• Close a desktop tab with its ×, a middle-click, its menu or ⌥⌘W, and you're asked first if closing it would stop work running in it.\n• File tools and patches stay in the folders your permission profile allows: a path sent as a list can no longer skip the folder rules.",
-  "pub_date": "2026-11-17T08:37:29.000Z",
+  "version": "0.25.0-beta.1",
+  "notes": "• Images that MCP and other tools return now reach models that take images; others get a short placeholder instead of pages of text.\n• Each request sends only your latest 3 tool images, so a long session's screenshots don't pile up in every request.\n• The desktop app now finds updates on zergai.com, so new releases no longer wait on GitHub Pages; older apps need one update by hand.",
+  "pub_date": "2026-11-19T12:41:11.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "37b443b0a818cffc857304ce27672ea3467a36b98cee8cbe9bb1c0a181fec6cc",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmhIQjY3NXdrQ0pJem1kUjZQT1pkdmQ3WG85MWZTQ1Y2T3E5akliNngxNHVkbDVaK3Y5a2NkMXNCWHkzYXpJK1Q1MkJsR3hOcGhLZ1hTT2djNElkZ3d3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTQwMjgxCWZpbGU6enRjLmFwcC50YXIuZ3oKZURHZ3lMUENHQXB3c0tDUW1PUU0ybWZ4bFVNT2tJTFNsay8xQlFVWUUyR25HM2N6eUg2VytQUnpITjBzMk5YV3JhU2VMcE0rb2N6R2JzUzJobVM3Qmc9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.24.0-beta.1/ztc.app.tar.gz"
+      "sha256": "da3af579f95c29c2f2e36a6ad2c5512c876e157b09bd3de5f807efe894dc7996",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmwvbnd0cmdJTzJaUzMwajJUYmo2aXh2eENUOGE4VUVZR1ZXcHpBeFFySWtsQ0NXZkdDMzZWS1FsODV3ZjBOdEZ6TVZPbnJwR3BPaVd4YjRwQVplSUFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MDk4MjUyCWZpbGU6enRjLmFwcC50YXIuZ3oKS2pNWWVlMjNsSUcrR1V3SGF3VklCamlUN3BHRHZpVkJ2Wndxc1dON2RHZGdFemJuRUxOczZuY0JJVDdyTFI1Nzl2TTRuWnArSDl4Q0JadnU4bjd4QUE9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.25.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "Main answers an agent's message once it has finished, with its answer.",
-    "Two messages typed into a Claude Code or Codex pane in a row arrive as two.",
-    "What ZTC types into a Claude Code or Codex pane carries no control characters.",
-    "Main's messages carry the name its pane goes by.",
-    "Closing a prompt that opened in Main by itself says what it closed.",
-    "A line ZTC shows only in this terminal stays out of the turn's recap.",
-    "/help shows every command as you type it.",
-    "A Router key that is stored broken, or that its provider refused, says so in Router's words.",
-    "A request Zerg Router fails says what failed, with its HTTP status.",
-    "A session whose diagnostics were masked differently between checkpoints loads again.",
-    "Resume your Claude Code and Codex sessions.",
-    "/claude -- TEXT and /codex -- TEXT start a fresh session with the text as its prompt, word for word",
-    "The pane that starts an exchange with Main chooses how long Main answers it by itself.",
-    "Close a tab in the desktop app.",
-    "The desktop app's mirror answers only the link ZTC gives.",
-    "A pane's own credential no longer types as you, or into a shell or a command pane.",
-    "A message for a ZTC pane that is still starting waits for it, and is never typed in.",
-    "The pane relay forwards only what a pane may send.",
-    "On Linux the pane relay's socket is yours alone.",
-    "apply_patch reads a diff's names exactly as git does, NUL bytes and all.",
-    "A confined write cannot build a new git directory.",
-    "A path or patch must be well-formed Unicode text.",
-    "apply_patch writes only where a permission profile allows.",
-    "git no longer runs a command a confined agent planted.",
-    "apply_patch no longer shows a file outside the root through a link it made.",
-    "A Codex apply_patch heredoc is a file write.",
-    "A denied path is denied however it's spelled.",
-    "A file tool reads only a path the profile checked."
+    "A model that takes images now sees the images your tools return.",
+    "A tool's image no longer reaches the model as text.",
+    "The desktop app finds new releases without GitHub Pages.",
+    "The desktop app also takes its downloads from zergai.com."
   ]
 }
