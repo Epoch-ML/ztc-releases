@@ -1,20 +1,27 @@
 {
   "schema_version": 1,
   "product": "ZTC",
-  "version": "0.25.0-beta.1",
-  "notes": "• Images that MCP and other tools return now reach models that take images; others get a short placeholder instead of pages of text.\n• Each request sends only your latest 3 tool images, so a long session's screenshots don't pile up in every request.\n• The desktop app now finds updates on zergai.com, so new releases no longer wait on GitHub Pages; older apps need one update by hand.",
-  "pub_date": "2026-11-19T12:41:11.000Z",
+  "version": "0.26.0-beta.1",
+  "notes": "• Arrange the desktop app's tabs and panes by dragging, from a pane's menu or with ⌥⇧⌘ keys; resuming the session brings the layout back.\n• In the desktop app, ⌘-click a URL in Main or any ZTC pane to open it, even one wrapped over several rows outside code blocks and tables.\n• If ZTC crashes or hangs, the desktop app keeps your panes running, and a banner can end a hung ZTC without closing them.\n• Very long sessions and huge messages no longer freeze or crash ZTC, and those sessions resume; a 128K-character paste is now a badge too.",
+  "pub_date": "2026-11-20T12:41:20.000Z",
   "platforms": {
     "darwin-aarch64": {
-      "sha256": "da3af579f95c29c2f2e36a6ad2c5512c876e157b09bd3de5f807efe894dc7996",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdmwvbnd0cmdJTzJaUzMwajJUYmo2aXh2eENUOGE4VUVZR1ZXcHpBeFFySWtsQ0NXZkdDMzZWS1FsODV3ZjBOdEZ6TVZPbnJwR3BPaVd4YjRwQVplSUFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MDk4MjUyCWZpbGU6enRjLmFwcC50YXIuZ3oKS2pNWWVlMjNsSUcrR1V3SGF3VklCamlUN3BHRHZpVkJ2Wndxc1dON2RHZGdFemJuRUxOczZuY0JJVDdyTFI1Nzl2TTRuWnArSDl4Q0JadnU4bjd4QUE9PQo=",
-      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.25.0-beta.1/ztc.app.tar.gz"
+      "sha256": "75d4ef64f5c82f16d2fa60afa5c63b0e0a2e10f6ab44cfa3398c7e08383b29d6",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaC9LcXNEMnJPdnF1YTUraU9ITVpCa0xNMDJVeDB5LzB5NGtZdlFjaDZiZENuTGt6amxhNHhYZVlTYWJZTGhtUHVLQ085cFBuOGZORnJsSGorcHR5RXl5bmpWVkt3ZGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MTgzMjE2CWZpbGU6enRjLmFwcC50YXIuZ3oKdzVEV2ttMTVuZGw4VFNXVVNZS3lhTXlGd2M4aThZV1VwdzRLUDdaWGVBczRjczd2SFlLR2JZS1FYY3crNnRGTEI1QzBNSDdNeTlua2JQZUVpcEVrRHc9PQo=",
+      "url": "https://github.com/Epoch-ML/ztc-releases/releases/download/ztc-desktop-preview-v0.26.0-beta.1/ztc.app.tar.gz"
     }
   },
   "changes": [
-    "A model that takes images now sees the images your tools return.",
-    "A tool's image no longer reaches the model as text.",
-    "The desktop app finds new releases without GitHub Pages.",
-    "The desktop app also takes its downloads from zergai.com."
+    "A session holding one huge message resumes, and long sessions keep Main updating.",
+    "The desktop app, zmux and ztc-tui keep up when a window or a terminal stops reading, and say what they dropped.",
+    "Panes no longer inherit the terminal that started ZTC.",
+    "Moving panes in the desktop app never leaves a workspace that won't save.",
+    "The desktop app keeps your panes when ZTC crashes, and offers to end a ZTC that hangs.",
+    "⌘-click a URL in Main, or any ZTC pane, to open it.",
+    "Arrange the desktop app's panes.",
+    "Arrange the desktop app's tabs.",
+    "ZTC saves the desktop app's arrangement as soon as it changes.",
+    "A paste of 128K characters or more is a badge in the composer, even on one line.",
+    "zmux's mirror takes 16 viewers and lets an idle one go after two minutes."
   ]
 }
