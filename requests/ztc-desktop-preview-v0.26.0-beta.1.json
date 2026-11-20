@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "product": "ZTC",
+  "channel": "preview",
+  "version": "0.26.0-beta.1",
+  "release_tag": "ztc-desktop-preview-v0.26.0-beta.1",
+  "source_repository": "Epoch-ML/zerg",
+  "source_sha": "f5a73b0d43721158734afe4beb672388cb70aa14",
+  "source_ref": "refs/tags/ztc-desktop-preview-v0.26.0-beta.1",
+  "requested_at": "2026-11-20T12:41:20.000Z",
+  "npm": {
+    "name": "@zergai/ztc",
+    "version": "0.26.0-beta.1",
+    "integrity": "sha512-TiY5Th0Hr88cX2uhwVJ3xOAE9hqPsE2KFVTq6NuGOwBPUraSxXN/8RdaLDMnPxDiinVQ6JX8SBuPaWl3YVtJTw==",
+    "tarballUrl": "https://registry.npmjs.org/@zergai/ztc/-/ztc-0.26.0-beta.1.tgz"
+  },
+  "whats_new": [
+    "Arrange the desktop app's tabs and panes by dragging, from a pane's menu or with ⌥⇧⌘ keys; resuming the session brings the layout back.",
+    "In the desktop app, ⌘-click a URL in Main or any ZTC pane to open it, even one wrapped over several rows outside code blocks and tables.",
+    "If ZTC crashes or hangs, the desktop app keeps your panes running, and a banner can end a hung ZTC without closing them.",
+    "Very long sessions and huge messages no longer freeze or crash ZTC, and those sessions resume; a 128K-character paste is now a badge too."
+  ],
+  "changes": [
+    "A session holding one huge message resumes, and long sessions keep Main updating.",
+    "The desktop app, zmux and ztc-tui keep up when a window or a terminal stops reading, and say what they dropped.",
+    "Panes no longer inherit the terminal that started ZTC.",
+    "Moving panes in the desktop app never leaves a workspace that won't save.",
+    "The desktop app keeps your panes when ZTC crashes, and offers to end a ZTC that hangs.",
+    "⌘-click a URL in Main, or any ZTC pane, to open it.",
+    "Arrange the desktop app's panes.",
+    "Arrange the desktop app's tabs.",
+    "ZTC saves the desktop app's arrangement as soon as it changes.",
+    "A paste of 128K characters or more is a badge in the composer, even on one line.",
+    "zmux's mirror takes 16 viewers and lets an idle one go after two minutes."
+  ]
+}
